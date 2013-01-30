@@ -201,7 +201,7 @@ __kernel void advectRK2(
   //y = x + dt*u(x + (dt/2)*u(x))
   
   //backtrace based upon current velocity at cell center.
-  float halfDT = 0.5*dt;
+  float halfDT = 0.5f*dt;
   float3 halfway_position = {
     pos.x+(halfDT*orig_vel.x),
     pos.y+(halfDT*orig_vel.y),
@@ -278,7 +278,7 @@ __kernel void advect_velocity_RK2(
   //y = x + dt*u(x + (dt/2)*u(x))
   
   //backtrace based upon current velocity at cell center.
-  float halfDT = 0.5*dt;
+  float halfDT = 0.5f*dt;
   float3 halfway_position = {
     pos.x+(halfDT*orig_vel.x),
     pos.y+(halfDT*orig_vel.y),
@@ -504,7 +504,7 @@ __kernel void calculate_divergence(
 		float du = get_data(u,i+1,j,k) - get_data(u,i-1,j,k);
 		float dv = get_data(v,i,j+1,k) - get_data(v,i,j-1,k);
 		float dw = get_data(w,i,j,k+1) - get_data(w,i,j,k-1);
-		float div = 0.5*(du + dv + dw);
+		float div = 0.5f*(du + dv + dw);
     
 		divergence[IX(i,j,k)] = div;
     
