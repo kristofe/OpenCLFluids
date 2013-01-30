@@ -417,7 +417,6 @@ float4 get_curl(
   float4 out = {dwdj-dvdk, dudk-dwdi, dvdi-dudj,0.0f};
   return out;
 }
-
 __kernel void vorticity_confinement(__global float *u,
                                     __global float *v,
                                     __global float* w,
@@ -439,6 +438,7 @@ __kernel void vorticity_confinement(__global float *u,
   if(i < 1 || j < 1 || k < 0 || i >= NX -1 || j >= NY-1 ||  k > NZ )
     return;
   
+  /*
 	float4 curl;
   float4 curl_iplus1;
   float4 curl_iminus1;
@@ -449,21 +449,23 @@ __kernel void vorticity_confinement(__global float *u,
   
   float4 norm;
   float4 f;
+  */
   
     // calculate gradient of curl magnitude
-    curl_iplus1 = get_curl(u_prev,v_prev, w_prev, i+1, j, k);
-    curl_iminus1= get_curl(u_prev,v_prev, w_prev, i-1, j, k);
+    float4 curl_iplus1 = get_curl(u_prev,v_prev, w_prev, i+1, j, k);
+    float4 curl_iminus1= get_curl(u_prev,v_prev, w_prev, i-1, j, k);
     
-    curl_jplus1 = get_curl(u_prev,v_prev, w_prev, i, j+1, k);
-    curl_jminus1= get_curl(u_prev,v_prev, w_prev, i, j-1, k);
+    float4 curl_jplus1 = get_curl(u_prev,v_prev, w_prev, i, j+1, k);
+    float4 curl_jminus1= get_curl(u_prev,v_prev, w_prev, i, j-1, k);
     
-    curl_kplus1 = get_curl(u_prev,v_prev, w_prev, i, j, k+1);
-    curl_kminus1 = get_curl(u_prev,v_prev, w_prev, i, j, k-1);
+    float4 curl_kplus1 = get_curl(u_prev,v_prev, w_prev, i, j, k+1);
+    float4 curl_kminus1 = get_curl(u_prev,v_prev, w_prev, i, j, k-1);
     
     float dcdi = 0.5f*(length(curl_iplus1) - length(curl_iminus1));
     float dcdj = 0.5f*(length(curl_jplus1) - length(curl_jminus1));
     float dcdk = 0.5f*(length(curl_kplus1) - length(curl_kminus1));
     
+    float4 norm = {0.0f, 0.0f, 0.0f, 0.0f};
     norm.x = dcdi;
     norm.y = dcdj;
     norm.z = dcdk;
@@ -471,18 +473,17 @@ __kernel void vorticity_confinement(__global float *u,
     
     norm = safe_normalize(norm);
     
-    curl = get_curl(u_prev,v_prev, w_prev, i, j, k);
+    float4 curl = get_curl(u_prev,v_prev, w_prev, i, j, k);
     
     //float e = 0.5f;
     
-    f = cross(norm, curl);
+    float4 f = cross(norm, curl);
     
     u[IX(i,j,k)] += f.x * e * dt;
     v[IX(i,j,k)] += f.y * e * dt;
     w[IX(i,j,k)] += f.z * e * dt;
     
 }
-
 
 __kernel void calculate_divergence(
             __global float *divergence,
