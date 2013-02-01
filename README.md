@@ -1,3 +1,5 @@
+This branch has a version of the code that was originally submitted for the writeup/paper.
+
 Fluid solver written in C and OpenCL which switch between the two. Final project for High Performance Scientific Computing.
 
 The serial c code is in second_order_solver.h and the opencl calls are in cl_solver.h and the kernels are in kernels.cl. The entry point for the entire simulation is in main.c.  The grid size is specified in the three #defines of NX, NY, NZ.  Turning on OpenCL is in the #define USE_OPENCL  at the top of main.c.   
