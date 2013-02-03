@@ -1,0 +1,804 @@
+%\documentclass[9pt, english]{article}
+\documentclass[abstract]{acmsiggraph} 
+\usepackage{url}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{appendix}
+\usepackage{tabularx}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+%\usepackage[hmargin=2cm,vmargin=2.0cm]{geometry}
+%\geometry{letterpaper}                   % ... or a4paper or a5paper or ...
+%%\geometry{landscape}                % Activate for rotated page geometry
+%%\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+%\usepackage{indentfirst}               % Activate to force indentation of paragraphs after section headings
+%\usepackage{graphicx}
+%\usepackage{amssymb}
+%\usepackage{amsmath}
+%\usepackage{mathtools}
+%\usepackage{epstopdf}
+%\usepackage{float}
+%\usepackage{verbatim}
+%\usepackage{appendix}
+%\usepackage{tabularx}
+%\usepackage{color}
+%\usepackage{listings}
+%\usepackage{qtree}
+%\definecolor{dkgreen}{rgb}{0,0.6,0}
+%\definecolor{gray}{rgb}{0.5,0.5,0.5}
+%\definecolor{mauve}{rgb}{0.58,0,0.82}
+%\usepackage{setspace}  % For manual control over line spacing
+%\usepackage{multicol}
+%\usepackage[super,square]{natbib}
+%\usepackage{hyperref}
+%\usepackage[font=small]{caption}
+%\usepackage{placeins}
+
+\hypersetup{
+    colorlinks=true,        % false: boxed links; true: colored links
+    linkcolor=black,        % color of internal links (change box color with linkbordercolor)
+    citecolor=black,        % color of links to bibliography
+    filecolor=black,        % color of file links
+    urlcolor=blue           % color of external links
+}
+
+% Useful: http://robjhyndman.com/researchtips/synchronizing-winedt-and-pdf-files/
+
+%\singlespacing
+%\onehalfspacing
+
+%settings for inline code
+\lstset{
+  language=C++,
+  basicstyle=\tiny,         % Options: \tiny, \scriptsize, \footnotesize, \small, \normalsize
+  rulecolor=\color{black},        % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+  tabsize=2,                      % sets default tab size to 2 spaces
+  captionpos=b,                   % sets the caption-position to bottom
+  breaklines=true,                % sets automatic line breaking
+  breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
+  title=\lstname,                 % show the filename of files included with \lstinputlisting also try caption instead of title
+  keywordstyle=\color{blue},      % keyword style
+  commentstyle=\color{dkgreen},   % comment style
+  stringstyle=\color{mauve},      % string literal style
+  escapeinside={\%*}{*)},         % if you want to add a comment within your code
+  morekeywords={*,...}            % if you want to add more keywords to the set
+  showspaces=false,
+  showstringspaces=false
+}
+
+
+
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+\author{
+	Kristofer Schlachter\thanks{e-mail:ks228@cs.nyu.edu}\\
+	New York University
+}
+\pdfauthor{Kristofer Schlachter}
+
+%%% User-defined keywords.
+
+\keywords{CFD, PDE Solvers, stable solvers, Navier-Stokes, Euler Equations, Fluids, Semi-Lagrangian, OpenCL, GPU}
+
+\title{Introduction to Fluid Simulation}
+
+%\date{}                                           % Activate to display a given date or no date
+
+\begin{document}
+\maketitle
+
+
+\begin{abstract}
+
+This is a short tutorial on Computational Fluid Dynamics, which is a challenging subject to learn.  I will introduce all of the topics necessary to understand and build a fluid solver.  Very little previous knowledge in the subject will be assumed and explanations will be given with the goal of being able to implement a solver on the CPU and GPU.
+
+\end{abstract}
+
+\keywordlist
+
+%%% If you are preparing a paper to be presented in the Technical Papers
+%%% program at one of our annual flagship events (and, therefore, using
+%%% the ``annual'' parameter to the ``\documentclass'' command), the
+%%% ``\TOGlinkslist'' command prints out the list of hyperlinked icons.
+%%% If you are using any other parameter to the ``\documentclass'' command
+%%% this command does absolutely nothing.
+
+\TOGlinkslist
+
+%%% The ``\copyrightspace'' command will leave clear an amount of space
+%%% at the bottom of the left-hand column on the first page of your paper,
+%%% according to the parameter used in the ``\documentclass'' command.
+
+\copyrightspace
+
+
+
+\section*{Introduction}
+
+It is challenging to start with an example like Jos Stam's solver that he describes \cite{stam03} and \cite{stam99} and extend it. The math and notation is difficult especially for someone who has not taken vector calculus or differential equations. Recently there have been papers and a book that makes this task a little easier;  In this project I used Robert Bridson's book, \cite{bridson2009} which is in turn based upon the notes for a Siggraph course on Fluid Simulation\cite{BridsonNotes}. I also used Ronald Fedkiw's paper \cite{fedkiw2001}. David Cline et al. paper \cite{Cline} was also quite useful.
+
+
+\section{What does Semi-Lagrangian mean?}
+
+There a couple of common ways to approach simulating fluids, and among these they basically fall into two camps.  The Lagrangian point of view treats the world like a particle system where particles have properties which are tracked as the particle moves.  The other viewpoint is the Eulerian viewpoint where you have fixed points in space, usually placed in a grid layout, where you measure things as they go past.  If you think of it as measuring the weather, the Lagrangian way would be using weather balloons floating with the wind.  The Eulerian way would be to place sensors on the ground measuring the weather over time.
+The simulator described in this report falls somewhere in between.  It uses a grid to store and track fluid properties but it uses virtual particles to help compute where things are going.  This approach is categorized as Semi-Larangian, because it uses virtual particles to handle the advection.
+
+\section{Incompressible Navier Stokes}
+ The governing equations of fluid flow that we will start with are called the incompressible Navier Stokes equations:  
+\begin{equation} % \begin{equation*} the star causes tex to not  number the equation
+\frac{\partial u}{\partial t} = -(u \cdot \nabla)u - \frac{1}{\rho}\nabla p + v \nabla^2 u + F
+\label{navier_stokes2} % always put this last
+\end{equation}\\
+
+\begin{equation} % \begin{equation*} the star causes tex to not  number the equation
+\nabla \cdot u = 0
+\end{equation}
+
+The equation is broken down as follows:\\
+\begin{flalign}
+\begin{minipage}[t]{0.15\textwidth}
+$\frac{\partial u}{\partial t} \nonumber$
+\end{minipage}
+\begin{minipage}[t]{0.35\textwidth}
+{\bf The derivative of velocity with respect to time}.  Calculated at each grid point each time step.
+\end{minipage}
+\\
+\begin{minipage}[t]{0.15\textwidth}
+$-(u \cdot \nabla)u \nonumber$
+\end{minipage}
+\begin{minipage}[t]{0.35\textwidth}
+{\bf The convection term}. This is the self advection term where the velocity field advances along itself.  In the code we will use the backward particle trace for this term.
+\end{minipage}
+\\
+\begin{minipage}[t]{0.15\textwidth}
+$-\frac{1}{\rho}\nabla p \nonumber$
+\end{minipage}
+\begin{minipage}[t]{0.35\textwidth}
+{\bf The pressure term}. $\rho$ is the density of the fluid and $p$ is the pressure. $p$ is whatever it takes to make the velocity field divergence free.  The simulator will solve for a pressure that makes our fluid incompressible at each time step.
+\end{minipage}
+\\
+\begin{minipage}[t]{0.15\textwidth}
+$v\nabla^2u \nonumber$
+\end{minipage}
+\begin{minipage}[t]{0.35\textwidth}
+{\bf The viscosity  term}. The Euler equations that we are going to use drop this term.
+\end{minipage}
+\\
+\begin{minipage}[t]{0.15\textwidth}
+$F \nonumber$
+\end{minipage}
+\begin{minipage}[t]{0.35\textwidth}
+{\bf External force}. Any external forces including gravity.
+\end{minipage}
+\end{flalign}
+
+\section{Incompressible Euler Equations}
+If you drop the viscosity term from the incompressible Navier Stokes equations we get:\\
+
+\begin{equation} % \begin{equation*} the star causes tex to not  number the equation
+\frac{\partial u}{\partial t} + (u \cdot \nabla)u + \frac{1}{\rho}\nabla p =F
+\label{euler_main} % always put this last
+\end{equation}
+
+\begin{equation} % \begin{equation*} the star causes tex to not  number the equation
+\nabla \cdot u = 0
+\label{euler_constraint} % always put this last
+\end{equation}
+
+Such an ideal fluid with no viscosity is called \emph{inviscid}.  These are the equations we are going to use.
+
+
+\section{Mathematical Notation}
+Inspired by another paper \cite{Cline}, here is a quick introduction to some Mathematical operators and what they turn into when you discretize them on a grid.\\
+\hspace{0cm}\\
+{\bf The partial derivative} ($\partial$). In this paper approximated with a central difference:
+
+\begin{equation*} % \begin{equation*} the star causes tex to not  number the equation
+\frac{\partial {f(x,y,z)}}{\partial y} = \frac{f(x,y+h,z) - f(x,y-h,z)}{h} 
+\end{equation*}\\
+
+on a MAC grid:\\
+
+\begin{equation*} 
+\frac{\partial {f(x,y,z)}}{\partial y} = f(x,y+1,z) - f(x,y,z)
+\end{equation*}
+
+{\bf The gradient operator} ($\nabla$) is a vector of partial derivatives:
+
+\begin{equation*} 
+\nabla = \left(\frac{\partial}{\partial x},\frac{\partial}{\partial y},\frac{\partial}{\partial z}\right)
+\end{equation*}
+
+A 3D gradient on a MAC grid will look like:
+
+\begin{equation*} 
+\nabla f(x,y,z) = \left(
+\begin {split}
+f(x+1,y,z)-f(x,y,z),\\
+f(x,y+1,z)-f(x,y,z),\\
+f(x,y,z+1)-f(x,y,z) 
+\end {split}
+\right)
+\end{equation*}\\
+
+
+{\bf The divergence of a vector field} ($\nabla \cdot u$) produces the scalar field: 
+
+\begin{equation*} 
+\nabla \cdot u = \frac{\partial u_x}{\partial x}+\frac{\partial u_y}{\partial y}+\frac{\partial u_z}{\partial z}
+\end{equation*}
+
+A 3D divergence on a MAC grid will look like:
+
+\begin{align*} 
+\nabla \cdot u(x,y,z) =
+& (u_x(x+1,y,z)-u_x(x,y,z))+ \\
+&  (u_y(x,y+1,z)-u_y(x,y,z))+ \\
+&  (u_z(x,y,z+1)-u_z(x,y,z))  
+\end{align*}
+
+{\bf The Laplacian operator} ($\nabla^2$) is the dot product of two gradient operators:
+
+\begin{equation*} 
+\nabla^2 =\nabla \cdot \nabla =  \frac{\partial^2}{\partial x^2}+\frac{\partial^2}{\partial y^2}+\frac{\partial^2}{\partial z^2}
+\end{equation*}
+
+A 3D Laplacian on a MAC grid will look like:
+
+\begin{align*} 
+\nabla^2 f(x,y,z) =
+& f(x+1,y,z)+f(x-1,y,z) +\\
+& f(x,y+1,z)+f(x,y-1,z) +\\
+& f(x,y,z+1)+f(x,y,z-1) - 6f(x,y,z)
+\end{align*}
+
+To apply $\nabla^2$ to a vector field we apply the operator to each vector component separately:
+
+\begin{equation*} 
+\nabla^2 u(x,y,z) = \left(
+\begin{split}
+&\nabla^2 u_x(x,y,z),\\
+&\nabla^2 u_y(x,y,z),\\
+&\nabla^2 u_z(x,y,z)
+\end{split}
+\right)
+\end{equation*}
+
+
+
+
+\section{MAC Grid}
+In the simulation we store various values in grids (velocity, pressure, fluid concentration, etc) at various points in space.  Unfortunately the obvious choice of a uniform grid isn't the best.  There is a technique called the marker-and-cell (MAC) method \cite{harlow65} for discretizing incompressible flow problems.  The main contribution that method made to modern CFD was the introduction of the \emph{staggered grid}. The Mac grid method discretizes space into square or cubic cells with width $h$.  Each cell has a pressure, $p$, defined at its center.  It also has a velocity, $u = (u_x,u_y,u_z)$, but the components of the velocity are placed at the centers of the cell faces (for example $u_x$ on the x-min face and so on as shown in Figures \ref{mac_cell_2d} and \ref{mac_cell_3d}). 
+\begin{figure} [h]
+\centering
+\includegraphics[width=0.4\textwidth]{images/mac_cell_2d}
+\caption{2D MAC Cell}
+\label{mac_cell_2d} %always put this last
+\end{figure}
+\hspace{0cm}
+\begin{figure} [h!]
+\centering
+\includegraphics[width=0.4\textwidth]{images/mac_cell_3d}
+\caption{3D MAC Cell}
+\label{mac_cell_3d} %always put this last
+\end{figure}
+
+The rationale for putting the velocity components on the faces is that we can use more accurate \emph{central differences} for the pressure gradient and for the divergences without the disadvantages of a regular grid.  Central differences \eqref{central_diff_bad} are $O\left(\Delta x^2\right)$ accurate but they have to be handled carefully:  
+\begin{equation}
+\frac{\partial q}{\partial x} \approx \frac{q_{i+1}-q_{i-1}}{2\Delta x}
+\label{central_diff_bad}
+\end{equation}
+
+As described in the literature there are problems with the sampling pattern of \eqref{central_diff_bad}.\footnote{See Bridson's book for an explanation} It turns out that the MAC grid solves this problem by using a staggered grid, where we don't skip over any indices and it achieves an $O\left(\Delta x^2\right)$ accuracy.  You can then estimate the derivative at grid point $i$ in the staggered grid as: 
+
+
+\begin{equation}
+\frac{\partial q}{\partial x} \approx \frac{q_{i+1/2}-q_{i-1/2}}{\Delta x}
+\label{central_diff_good}
+\end{equation}
+
+It turns out that in the \emph{Pressure Projection} stage the staggered grid has other useful properties.  However there are problems with it. Specifically in order to evaluate velocity anywhere in the grid you have to do a three trilinear interpolations, one for each component. In general this is made up for by the increased accuracy of the solver.
+
+%\subsection{How to deal with half indices}
+%The half indices simplify the formulas but they make coding a little harder.  The convention that Bridson uses is to put the lower half indices at the same index as the pressure.  So he uses the following:
+%
+%\begin{equation*}
+%\centering
+%\begin {split}
+%p[i][j][k]&=p_{i,j,k}\\
+%u_x[i][j][k]&=u_{i-1/2,j,k}\\
+%u_y[i][j][k]&=u_{i,j-1/2,k}\\
+%u_z[i][j][k]&=u_{i,j,k-1/2}
+%\end{split}
+%\end{equation*}
+%
+%Therefore the grid of $n_x,n_y,n_z$ cells stores pressure in a $n_x \cdot n_y \cdot n_z$ size array.  The velocity x component array is sized $(n_x + 1) \cdot n_y \cdot n_z$, the y component array is sized $n_x \cdot (n_y + 1) \cdot n_z$ and the z component array is sized $n_x \cdot n_y \cdot (n_z + 1)$
+
+
+\section{Algorithm}
+\subsection{Simulation Loop}
+With the aforementioned MAC structure we can now present the components of the simulator.  Starting with an initial divergence-free velocity field $u$:
+\begin{itemize}
+\item For each simulation step...
+
+\begin{itemize}
+\item Choose a timestep $\Delta t$.
+\item Compute the advection term $-(u \cdot \nabla)u$ $\rightarrow$ $u^A = \mathtt{advect}(u^n,\Delta t, u^n)$
+\item Add external forces $\rightarrow$ $u^B = u^A + \Delta tF$
+\item Solve for pressure so such that $\nabla \cdot u = 0$ $\rightarrow$ $u^{n+1} = \mathtt{project}(\Delta t,u^B)$
+\end{itemize}
+
+\end{itemize}
+\subsection{Choosing a Timestep}
+%Bridson says:
+%"A primary concern for any numerical method is whether it is stable: will it blow up? Happily the semi-Lagrangian approach above is unconditionally stable: no matter how big $\Delta t$ is, we can never blow up. It’s easy to see why: wherever the particle starting point ends up, we interpolate from old values of $q$ to get the new values for $q$. Linear/bilinear/trilinear interpolation always produces values that lie between the values we’re interpolating from: we can’t create larger or smaller values of q than were already present in the previous time step. So $q$ stays bounded."
+
+A great property of using a semi-Lagrangian solver is that it can handle large time steps without instability. While you can choose a $\Delta t$ that suits your own accuracy, Bridson mentions that you can get strange results if you set $\Delta t$ too high.  So he recommend using a heuristic put forth by \cite{foster2001} where the strategy is to limit the time step so that the furthest particle trajectory is traced five cell widths:
+\begin{equation}
+\Delta t \leq \frac{5 \Delta x} {u_{max}}
+\end{equation}
+Bridson recommends calculating $u_{max}$ in the following way:
+
+\begin{equation}
+u_{max} = \mathtt{max}\left(|u| \right) + \sqrt{ \Delta x |F|}
+\end{equation}
+
+
+Where $F$ are the body forces and $\Delta x$ is a grid cell width.  This is slightly more robust because it also takes into account the forces acting on the fluid, it is always positive and can't cause a divide by zero.
+
+
+\subsection{Advection}
+
+Advection (or convection) propagates according to the expression $-(u \cdot \nabla)u$.  This term makes the Navier-Stokes and Euler Equations non-linear. Some methods use finite differencing \cite{foster1996} which is only stable when the time step is small enough to satisfy $\Delta t < \Delta h/u_{max}$ ($h$ is the grid cell width) \footnote{Please see the references for the conditions that led to this inequality}. Bridson uses a technique made popular by Jos Stam \cite{stam99} that results in an "unconditionally" stable solver\footnote{Stam based the method upon a technique to solve partial differential equations known as the \emph{method of characteristics}.  See appendix A of his paper \cite{stam99}}.  This method is referred to as a \emph{backwards particle trace} and has several advantages; most importantly it is unconditionally stable.  Stam argues that this can be seen because the new field is simply an interpolated sampling of the previous field and as a result the maximum value of the new field is never larger than the largest value of the previous field. It is also simple to implement. See Figure \ref{advect}.
+\begin{figure} [h!]
+\centering
+\includegraphics[width=0.5\textwidth]{images/advect}
+\caption{Basic idea behind the advection step. Instead of moving the cell centers forward in time (b) through the velocity field shown in (a), we look for the particles which end up exactly at the cell centers by tracing backwards in time from the cell centers (c).}\cite{stam03}
+\label{advect} %always put this last
+\end{figure}
+
+
+\subsubsection{Semi-Lagrangian Advection Method}
+The advection step can be encapsulated by the function:
+
+\begin{equation*}
+\centering
+q^{n+1} = \mathtt{advect}(u,\Delta t, q^n)
+\end{equation*}
+
+where the value $q$ represents the quantity that is being advected. Stam \cite{stam99} explains the method of \emph{backward particle trace}: ``At each time step all the fluid properties are moved by the flow field $u$. To obtain the velocity at point $x_G$ at the new time $t + \Delta t$, we backtrace the point $x_G$ through the flow field $u$ over a time $\Delta t$.  This traces backward partially along the streamlines of the flow field.  The new velocity at the point $x_G$, had its previous location a time $\Delta t$ ago." 
+The tricky part of this method is how you calculate the previous location. You can use a \emph{Forward Euler} step, which simply evaluates the velocity at $x_G$ and updates the position of $x_G$ based upon this velocity.  You end up arriving at point $x_p$ which is your back traced position:
+
+
+%Which given a velocity field $u$ (discretized by a MAC grid), a time step size $\Delta t$, and the current field quantity $q^n$ returns and approximation to the result of advecting $q$ through the velocity field over that duration of time.\footnote{Advection should only be called with a divergence-free velocity field $u$ or you might get odd looking results.}
+%
+%The \emph{backwards particle trace} method starts at the location for which we want to advect a quantity $q$, say at grid positions $x_G = (x,y,z)$.  A virtual particle\footnote{because the particle isn't real and never actually exists the technique is not \emph{Lagrangian} rather it is called \emph{Semi-Lagrangian}} from $x_G$ backwards through $u$ for $-\Delta t$ time, arriving at point $x_p$.  The velocity at $x_G$ is then replaced by the current velocity at $x_p$.  If $x_p$ is outside of your grid simply clamp\footnote{if you have periodic bounds, instead of clamp use modulus arithmetic} the indices of the calculated cell\footnote{More sophisticated methods are explained in Bridson but this works well enough}. 
+%Where things get dicey is how you calculate the previous point $x_p$.  
+%
+
+
+\begin{equation*}
+\centering
+x_p = x_G + \Delta tu(x_G)
+\end{equation*}
+
+Because the velocity is not constant this can be inaccurate, and therefore Bridson recommends using at least  \emph{Runge-Kutta} order two interpolation (RK2) instead:
+
+%\begin{equation*}
+%\centering
+%x_p = x_G + \Delta t u\left(x_G + \frac{\Delta t}{2}u(x_G)\right)
+%\end{equation*}
+
+\begin{equation*}
+x_{mid} = x_G - \frac{1}{2} \Delta t u\left(x_G\right)
+\end{equation*}
+\begin{equation*}
+x_{p} = x_G - \Delta t u\left(x_{mid}\right)
+\end{equation*}
+
+Again where $u(x_G)$ is evaluating the velocity field $u$ at grid position $x_G$ to get a position half a time step away at $x_{mid}$.  Use $x_{mid}$ to sample the velocity field again $u(x_{mid})$ which is the velocity which will be used for the whole time step. 
+
+%don't forget to explain the interpolation or refer to the earlier stuff.
+
+
+The above method plus the RK2 interpolation is encapsulated by:
+
+\begin{equation*}
+q^{n+1}_G = \mathtt{interpolate}\left(q^n,x_p\right)
+\end{equation*}
+
+
+Where $q^{n+1}_G$ is the new value of the quantity you are advecting (velocity, density, temperature, etc.) at a grid point $G$, $q^n$ is the field of the current values for that quantity and $x_p$ is the back traced position using the flow field.
+
+
+Many people get confused by the backwards particle trace. The listing below shows how it translated into code for my simulator:
+
+%\begin{figure} [h!]
+%\centering
+%\includegraphics[height=0.6\textwidth]{images/particle_trace_code}
+%\caption{Pseudo code for the functions to trace a particle backwards through the velocity field}
+%\cite{Cline}
+%\label{particle_trace_code} %always put this last
+%\end{figure}
+
+\begin{lstlisting}[label=advection_code,caption=Backwards particle trace based advection using RK2]
+void advect_velocity_RK2(float delta_time, float *u, float *v, float *w, 
+	float * u_prev, float * v_prev, float * w_prev)
+{
+	 //The NX scaling factor was found by looking at Stam's code. I can't find
+	 //a reason in his paper or anywhere else why you would scale this way.
+	 //But without it the backtrace never makes it out of the source cell.
+	float dt = -delta_time*NX;
+  int3 dims = {NX,NY,NZ};
+	FOR_EACH_FACE
+	{
+
+    float3 pos = {i*H,j*H,k*H};
+		float3 orig_vel = {u_prev[IX(i,j,k)],v_prev[IX(i,j,k)],w_prev[IX(i,j,k)]};
+    
+		//RK2
+		// What is u(x)?  value(such as velocity) at x
+		//y = x + dt*u(x + (dt/2)*u(x))
+    
+		//backtrace based upon current velocity at cell center.
+		float halfDT = 0.5*dt;
+		float3 halfway_position = {
+			pos.x+(halfDT*orig_vel.x),
+			pos.y+(halfDT*orig_vel.y),
+			pos.z+(halfDT*orig_vel.z)
+    };
+    
+		float3 halfway_vel;
+		halfway_vel.x = get_interpolated_value(u_prev, halfway_position,H,dims);
+		halfway_vel.y = get_interpolated_value(v_prev, halfway_position,H,dims);
+		halfway_vel.z = get_interpolated_value(w_prev, halfway_position,H,dims);
+    
+		float3 backtraced_position;
+		backtraced_position.x  = pos.x + dt*halfway_vel.x;
+		backtraced_position.y  = pos.y + dt*halfway_vel.y;
+		backtraced_position.z  = pos.z + dt*halfway_vel.z;
+
+		//Have to interpolate at new point
+		float3 traced_velocity;
+		traced_velocity.x = get_interpolated_value(u_prev, backtraced_position,H,dims);
+		traced_velocity.y = get_interpolated_value(v_prev, backtraced_position,H,dims);
+		traced_velocity.z = get_interpolated_value(w_prev, backtraced_position,H,dims);
+		
+		//Has to be set on u
+		u[IX(i,j,k)] = traced_velocity.x;
+		v[IX(i,j,k)] = traced_velocity.y;
+		w[IX(i,j,k)] = traced_velocity.z;
+	}
+}
+\end{lstlisting}
+
+
+\subsection{Add Body Forces}
+
+At this point you would add any external forces, such as gravity or buoyancy to the flow field $u$.  This is also the correct point to add any forces a user might want to add during an interactive simulation.
+
+\subsection{Projection / Pressure Solve}
+
+The $\mathtt{project}(\Delta t, u)$ routine does the following:
+\begin{itemize}
+\item Calculate the divergence b (the right-hand side) 
+\item Set the entries of A (see below)
+\item Solve $Ap = b$ with an appropriate linear solver. (I used Jacobi and Conjugate Gradient methods)
+\item Using the $p$, compute the new velocities $u^{n+1}$ by subtracting the pressure-gradient from the velocity field $u^n$.
+\end{itemize}
+
+\subsection{Calculating The Pressure}
+
+After advection we have a velocity field that does not satisfy the incompressibility constraint in equation \ref{euler_constraint} but we still have to apply the pressure.  What we need to do is set the pressures in the fluid cells so that the divergence of the entire flow field will be zero.  We can't iterate through each cell and satisfy $\nabla \cdot u = 0$, as this would change the divergence of the neighboring cells.  What we have to do is solve the constraint for all the cells at once.  This gives rise to a large sparse (lots of zero entries) matrix. 
+
+We can create a linear equation for the new pressure in every grid cell.  We then combine these divergence and pressure equations into matrix form and we end up with a system of equations:
+
+\begin{equation}
+\centering
+Ax=b
+\label{pressure_solve_matrix_form_simple}
+\end{equation}
+
+Remember that divergence looks like:
+\begin{equation*} 
+\nabla \cdot u = \frac{\partial u_x}{\partial x}+\frac{\partial u_y}{\partial y}+\frac{\partial u_z}{\partial z}
+\end{equation*}
+
+Using central differences it will look like:
+\begin{equation} 
+\centering
+\begin{split}
+D_i = \left( \nabla \cdot u \right)_{i,j,k} \approx
+&\frac{u_{i+\frac{1}{2},j,k}-u_{i-\frac{1}{2},j,k}}{\Delta h}+\\ 
+&\frac{u_{i,j+\frac{1}{2},k}-u_{i,j-\frac{1}{2},k}}{\Delta h}+\\ 
+&\frac{u_{i,j,k+\frac{1}{2}}-u_{i,j,k-\frac{1}{2}}}{\Delta h}
+\end{split}
+\label{divergence_central_differences}
+\end{equation}
+
+
+Every row of $A$ corresponds to one equation for one fluid cell.  In this formulation we will setup our matrix such that $b$ is simply our divergence for every fluid cell.  When written out our linear system takes the following form:
+
+\begin{equation}
+\centering
+\begin{bmatrix}-O_1 & C_{1,2} & \ldots & C_{1,n}\\
+C_{2,1} & -O_2 &  & \vdots\\
+\vdots &  & -\ddots & C_{n-1,n-1}\\
+C_{n,1} & \cdots & C_{n,n-1} & -O_n
+\end{bmatrix}
+\begin{bmatrix}p_{1}\\
+p_{2}\\
+\vdots\\
+p_{n}
+\end{bmatrix}
+=
+\begin{bmatrix}-D_{1}\\
+-D_{2}\\
+\vdots\\
+-D_{n}
+\end{bmatrix}
+\end{equation}
+
+
+Where $D_i$ corresponds to the divergences through cell i (\ref{divergence_central_differences}).  $O_i$ is the number of non-solid neighbors of cell $i$\footnote{in our case for no internal periodic boundaries it is always 4 for 2D or 6 for 3D}, and $C_{i,j}$ takes values based upon:
+
+\begin{equation*} 
+C_{i,j} = 
+\begin{cases}
+1 & \mbox{if cell } i \mbox{ is a neighbor of cell } j \\
+0 & \mbox{otherwise}
+\end{cases}
+\end{equation*}
+
+
+$A$ is symmetric and sparse and it is also a very well studied matrix.  In 2D it is called the \emph{5 point Laplacian Matrix} and in 3D it is called the \emph{7 Point Laplacian Matrix}.  Bridson recommends using the \emph{Modified Incomplete Cholesky Conjugate Gradient Level 0} (CG MIC(0)) algorithm.  This method incorporates a pre-conditioner specially chosen for this matrix form  to improve conjugate gradient convergence. The implemented simulator includes both jacobi and conjugate gradient solvers. I based my implementation of the conjugate gradient method on the pseudo code in the back of the tutorial written by Shewchuk \cite{shewchuk94}. Another resource I referred to which covered both solvers but not in a form I used was \cite{Amador}. 
+
+\subsection{Pressure Update}
+\subsubsection{Applying the pressure gradient to the velocity field}
+We calculate the pressure gradient and subtract it from the the velocity in each cell to ensure that the flow field is divergence free.   Below are formulas for the 3D case.
+
+\begin{equation}
+\centering
+u^{n+1}_{i+\frac{1}{2},j,k} = u^{n}_{i+\frac{1}{2},j,k} - \Delta t \frac{1}{\rho} \frac{p_{i+1,j,k}-p_{i,j,k}}{\Delta x}
+\end{equation}
+
+\begin{equation}
+\centering
+v^{n+1}_{i,j+\frac{1}{2},k} = v^{n}_{i,j+\frac{1}{2},k} - \Delta t \frac{1}{\rho} \frac{p_{i,j+1,k}-p_{i,j,k}}{\Delta x}
+\end{equation}
+
+\begin{equation}
+\centering
+w^{n+1}_{i,j,k+\frac{1}{2}} = w^{n}_{i,j,k+\frac{1}{2}} - \Delta t \frac{1}{\rho} \frac{p_{i,j,k+}-p_{i,j,k}}{\Delta x}
+\end{equation}
+Remember in a MAC grid that pressures are stored in the center so there are no 1/2 indices.\footnote{Implementation note: See Bridson Figure 4.1. Instead of looping over velocity locations and updating them with pressure differences, loop over pressure values and update the velocities they affect for greater efficiency.}
+
+
+\section{Implementation Details and Speed}
+\begin{figure} [h!]
+\centering
+\includegraphics[width=0.5\textwidth]{images/simulator_density}
+\caption{Screen shot of smoke/density in the interactive simulation of a 128x128x1 grid}
+\label{simulate_density} %always put this last
+\end{figure}
+
+\begin{figure} [h!]
+\centering
+\includegraphics[width=0.5\textwidth]{images/simulator_vel}
+\caption{Screen shot of velocity view in an interactive simulation of a 128x128x1 grid}
+\label{simulate_velocity} %always put this last
+\end{figure}
+\subsection{Implementation Notes}
+A couple of things that I implemented but didn't discuss in this writeup are the MacCormack method \cite{Selle2008} for advection, "Vorticity Confinement" which was discussed in the paper \cite{fedkiw2001}. Please refer to the papers and to my source code for the details of these methods. Because of time-pressure the grid was eventually implemented as uniform and not staggered. Also a fixed time step of 0.01 was used and $h$ was set to one in order to simplify all of the code.  Eventually I will correct these simplifications. 
+
+\subsection{Scale of the Problem}
+%Describe the scale of the problem you are aiming at, and what the scaling limitations are.
+
+3D fluids on a grid computations scale at O$\left(n^3\right)$.  The most expensive part is the projection step where a matrix of size $\left(O\left(N^3\right) \times O\left(N^3\right)\right)$ must be solved\footnote{NX, NY \& NZ are the dimensions of the simulation grid}.  So the choice and implementation of the linear solver is very important for performance. The problem target sizes were a modest 256x256x1 in realtime with aspirations to do 128x128x64 in real time as well.  Both are reasonable and were achieved (with a caveat for copy down of buffers for rendering\footnote{OpenCL allows sharing of buffer data with OpenGL.  Using that feature would eliminate the need for the buffer copy to the host for rendering.  This is future work and will be checked into the repository sometime in the near future.}).  When all of the buffers are kept on the GPU and don't need to be copied over the bus multiple times, performance was acceptable. Table  \ref{table_target_perf} shows performance for the target grid size of 128x128x64. A 128x128x64 grid has roughly 1 million cells which is 1 MegaCell per second in our measurements.  The slowest kernel is the projection which has a throughput of 68 MegaCells per second for that grid size and that translates to less than 15 milliseconds of run time.  To run all of the kernels at that size takes 25 milliseconds which corresponds to 40 FPS.  Since 30 FPS is considered a minimum for interactivity the performance goal was achieved. 
+
+
+
+
+\begin{table}
+\begin{tabular}{|c|c|r|r|}
+	\hline
+$Grid Size$    &   $Kernel$  & $Time (ms)$   & Throughput \\
+	\hline
+128x128x64	&	Advection Velocity &	 4.467	& 234\\
+128x128x64	&	Advection Density &	 2.828	&370\\
+128x128x64	&	Divergence &	 0.871	&1203\\
+128x128x64	&	Projection Jacobi	& 15.519	& 68\\
+128x128x64	&	Projection CG	& 14.205	&74\\
+128x128x64	&	Pressure Apply	& 1.139		&920\\
+	\hline
+\end{tabular}
+\caption{Throughput is in MegaCells/sec and only one projection is active at once}
+\label{table_target_perf}
+\end{table}
+%For example, if you are doing a linear algebra-based project, state "This project aims to be able to carry out Procedure X for matrices of size 10,000-20,000. At the high end, our project is limited by available memory on a GPU, and at the low end, parallelization overhead from our Step Y makes Approach Z more economical."
+\subsection{Other Peoples Work and Code}
+Jos Stam's Real-time fluid dynamics for games code \cite{stam03} was reviewed.  It helped in understanding some problems I had with my advection implementation.  In code Listing \ref{advection_code} you can see that I used Stam's scaling factor of the grid size to get the backwards particle trace to work.  The most useful resources I found were  Bridson's book \cite{bridson2009} and a much more concise paper from Ron Fedkiw \cite{fedkiw2001}.  I also found that using the pseudo-code at the end of \cite{shewchuk94} to implement CG was the best way to go.
+\subsubsection{Parallelization}
+The simulation has a series of steps which are written as straight C functions and equivalent OpenCL kernels.  Porting to OpenCL was trivial as it was mostly copying the C version of the code and adding a couple of boilerplate lines to calculate $i,j,k$\footnote{$i,j,k$ represent the indices of the grid cell being computed} from the global\_id and removing the surrounding triple loops.  I did not have time to optimize the OpenCL code by using local memory and doing block calculations for all my kernels. The one kernel that was enhanced with local memory copies of data was the apply pressure step.  The performance of that kernel is discussed in the section titled "Fell short of expectations" in the Performance Measurements section.
+%Describe existing work/software on your topic. Also state which other codes you have used and looked at while working on your project.
+%Describe your performance expectations. What do you estimate will be the most time-consuming step? Which one is hardest to parallelize? Relate this to your scaling discussion.
+\section{Performance Measurements}
+%In a separate section, describe performance and scaling measurements. State where performance and scaling exceed or fall short of your expectations. Explain your observations.
+%Important: Please write this section in terms of rates, not absolute timings. (Compare: Computation X took 17 seconds. Computation X achieved a rate of 17 GFlops/s.) (Clarification 12/7: These don't need to be GFlops/s or GB/s, they just have to be rates that make sense for the application you're addressing. Ideally, if you're reporting that you are doing 10,000 of "Operation X" each second, then it should at least be possible to have an intuitive idea of how much computational expense is involved in "Operation X".)
+%Clarification 12/20: "Speed-up" values are worse than absolute timings, which are in turn worse than absolute rates. The problem with speedups is that they're inherently bogus. The worse your starting point was, the better you'll look in terms of speed-up. Please avoid using this as a metric.
+Note that all of the performance graphs are at the end of the paper.  The performance tests were run on a Macbook Pro with an Intel Core i7-3720QM CPU @ 2.60GHz, which has 4 cores and 8 logical threads.  The GPU was a GeForce GT 650M.
+Performance was measured in MegaCells per second.  Since each cell takes set number of floating point calculations it seemed like a reasonable way to approximate a GigaFlops without having to actually count the number of floating point operations for an entire time step in the simulation.  
+
+\subsection{Performance Expectations}
+I expected the throughput serial code and the OpenCL on the CPU to remain constant regardless of problem size, which turned out to be true.  I also expected that on the GPU, throughput would ramp up with larger grid sizes and workgroups, which turned out to be true with diminishing returns at the largest grid sizes.
+I expected the most time consuming part to be the projection step. Table \ref{table_target_perf} shows that projection is roughly 15 milliseconds out of an entire simulation time of 25 milliseconds. This confirms that projection calculations are more than half (60\%) of the entire simulation. However, buffers being sent and retrieved from the GPU took a long time and any technique that can minimize them has an advantage in a interactive simulation. So while Conjugate Gradient converged in much fewer iterations and is a much better solver in general, the Jacobi iterations were faster in an interactive setting where just getting a valid result was more important than the most accurate.  CG had to send and receive two vectors of size $O\left(n^3\right)$ each iteration.  With Jacobi no buffers had to be sent or received as the data could stay on the GPU\footnote{The kernel needed to sync all global memory and therefore could not use barriers as they only sync workgroups.  So the whole kernel had to finish and be relaunched for each iteration.}.  This caused a big difference in the total time to calculate one time step.  However, when OpenCL was targeting the CPU the buffer transfer costs were eliminated and CG was much more efficient as it could converge faster and detect convergence after only a few iterations, while my implementation of Jacobi was always doing a fixed number of iterations since it lacked a residual calculation necessary to detect convergence.
+
+
+\subsubsection{Exceeded expectations}
+One thing that I was surprised to see was that for most simulation step I didn't max out the performance of the GPU.  The throughput grew on the GPU with problem size.  See Figures \ref{Throughput_Advect_Density}, \ref{Throughput_Project_Jacobi} and \ref{Throughput_Pressure_Apply_LocalMem}. The kernels that behaved this way were all very simple lookups of 7 values and a few multiplies and adds.  The kernels that were more complex hit their maximum throughput or started to see a drop off in gains when the grid sizes grew.
+
+I was very surprised by the performance of the OpenCL code running on the CPU.  The auto-vectorization and threading of the code caused a big speedup from the serial version, and was fast enough for real-time.  The buffer copies to and from the device were extremely fast, much faster than to the GPU which had to go over PCI express.  If you added the time to simulate multiple frames, the buffer copying to the device cut down the performance of the total simulation.  This isn't shown in the performance charts because I chose to focus on the computational performance.  However, the buffer transfer speed gain can be seen in figure \ref{Throughput_Project_CG} where the performance of the Projection step using a conjugate gradient solver is used.   My conjugate gradient solver is mostly doing dot products and matrix-vector multiplies but the results of each one was brought back to the CPU for proper synchronization for further calculation. Figure \ref{Throughput_Project_CG} shows how the OpenCL version using the CPU is actually faster for because the buffer transfers dominated the total time for the simulation step.  If the grid sizes went up this advantage would disappear and the GPU version would be faster as the time would be bounded by computations and not data transfer.
+
+\subsubsection{Fell short of expectations}
+The simulation did not benefit from using local memory at the block size I chose or at the simulation grid sizes tested. See Figure \ref{Throughput_Pressure_Apply_LocalMem} for a throughput comparison on a simple kernel that simply applied the pressure gradient to the velocity field. I was a little surprised by this.  Looking closer at the kernel and how it loaded values into local memory as well as how it utilized the local memory revealed the cause of this behavior.  The local memory only had each entry reused 6 times (7 accesses) and the code that transferred the appropriate global memory data into the local memory involved 5 branches to handle the edge cases.  This apparently negated the gains by locally accessing the data in the main calculation part of the kernel.
+
+
+\begin{figure*} [h!]
+\centering
+\includegraphics[width=0.9\textwidth]{images/Throughput_Advect_Density}
+\caption{Throughput of the Advect Density Routine in Serial Code and OpenCL on CPU and GPU}
+\label{Throughput_Advect_Density} %always put this last
+\end{figure*}
+
+\begin{figure*} [h!]
+\centering
+\includegraphics[width=0.9\textwidth]{images/Throughput_Advect_Velocity}
+\caption{Throughput of the Advect Velocity Routine in Serial Code and OpenCL on CPU and GPU}
+\label{Throughput_Advect_Velocity} %always put this last
+\end{figure*}
+
+
+\begin{figure*} [h!]
+\centering
+\includegraphics[width=0.9\textwidth]{images/Throughput_Project_CG}
+\caption{Throughput of the Projection using Conjugate Gradient Routine in Serial Code and OpenCL on CPU and GPU}
+\label{Throughput_Project_CG} %always put this last
+\end{figure*}
+
+\begin{figure*} [h!]
+\centering
+\includegraphics[width=0.9\textwidth]{images/Throughput_Project_Jacobi}
+\caption{Throughput of the Projection using Jacobi Iteration Routine in Serial Code and OpenCL on CPU and GPU}
+\label{Throughput_Project_Jacobi} %always put this last
+\end{figure*}
+
+\begin{figure*} [h!]
+\centering
+\includegraphics[width=0.95\textwidth]{images/Throughput_Pressure_Apply_LocalMem}
+\caption{Throughput of the Pressure Apply Routine in Serial Code and OpenCL on CPU and GPU.  However two scenarios using Local Memory Blocks are shown to compare the performance effect.}
+\label{Throughput_Pressure_Apply_LocalMem} %always put this last
+\end{figure*}
+
+\subsection{Source Code Links and Instructions}
+To get the code:
+\begin{itemize}
+\item Go to \url{http://github.com/kristofe/OpenCLFluids}
+\item Clone or download the code. 
+\item Switch to branch $\mathtt{code\_for\_paper}$. \footnote{This branch was made to preserve the state of the code at the time of the writing of this paper.}
+\item On a Mac run: $\mathtt{make\ mac} $
+\item On a linux run: $\mathtt{make\ linux} $\footnote{On linux make sure you install freeglut-dev with your package manager to compile and link the code.}
+\item Then run: $\mathtt{./fluidsim}$ 
+\end{itemize}
+OSX has all the libraries necessary.  I tested on 10.7.5 on a Macbook Pro, Macbook Air and a Mac Pro. Everything ran well and should run on any mac running OS X 10.7.5. I tested the linux build on the class VM in virtual box, but I only was able to compile the code.  Running it didn't work because it looked like it couldn't run the OpenGL code. 
+%Discuss how and where you have made your code available. (see below)
+%Include instructions on how to download, build and run a simple example of your code. Specify what hardware environment your code requires. If applicable, include data files so that we are able to try your code. If we won't be able to run your code on either the NYU systems or generic Linux machines with Nvidia GPUs, please provide a link to a YouTube video where you demonstrate your code. See this Wikipedia page for help with capturing your screen during the demonstration.
+
+
+%Code release/Git repository
+
+%I would like to encourage you to provide the code resulting from your project in open-source form. One convenient way to do that would be to create an account on GitHub and upload your code there. If you do so, please add a README so that others have a way of getting started with your work. There is extra credit to be had if you decide to go down this route. Also be sure to specify a license in your README. When in doubt, the MIT license is a reasonable, liberal default choice.
+
+%If you feel like you must keep your code private, please use the following naming convention for your final project repository on forge:
+
+%hpc12-fp-<NETIDS in alphabetical order, separated by dashes>
+%So if you and your teammates have NetIDs abc123 and xyz456, then your repository should be named
+
+%hpc12-fp-abc123-xyz456
+
+%\appendix
+
+
+%\section*{Appendix}
+%\subsection*{Method of Characteristics}
+%
+%\begin{figure} [h!]
+%\centering
+%\includegraphics[width=1.0\textwidth]{images/method_of_characteristics.pdf}
+%\end{figure}
+
+%\subsection*{Reason MAC Grid is better}
+%From Bridson: \\
+%"To see why this is so terrible, recall that a constant function can be defined as one whose first derivative is zero. If we require that the finite difference \eqref{appendix_central_diff_bad} is zero, we are allowing q’s that aren’t necessarily constant— $q_i$ could be quite different from $q_{i-1}$ and $q_{i+1}$ and still the central difference will report that the derivative is zero as long as $q_{i?1}$ = $q_{i+1}$. In fact, a very jagged function like $q_i$ = $(-1)i$ (Looks like a sawtooth or zig-zag) which is far from constant, will register as having zero derivative according to formula \eqref{appendix_central_diff_bad} . On the other hand, only truly constant functions satisfy the forward difference \eqref{appendix_fwd_diff}  equal to zero. The problem with formula \eqref{appendix_central_diff_bad}  is technically known as having a non-trivial null-space: the set of functions where the formula evaluates to zero contains more than just the constant functions it should be restricted to."
+%
+%\begin{equation}
+%\frac{\partial q}{\partial x} \approx \frac{q_{i+1}-q_{i-1}}{2\Delta x}
+%\label{appendix_central_diff_bad}
+%\end{equation}
+%
+%\begin{equation}
+%\frac{\partial q}{\partial x} \approx \frac{q_{i+1}-q_{i}}{\Delta x}
+%\label{appendix_fwd_diff}
+%\end{equation}
+%
+%\begin{equation}
+%\frac{\partial q}{\partial x} \approx \frac{q_{i+1/2}-q_{i-1/2}}{\Delta x}
+%\label{appendix_central_diff_good}
+%\end{equation}
+%
+%"How can we get the unbiased second-order accuracy of a central difference without this null-space problem? The answer is by using a staggered grid: sample the $q$’s at the half-way points, $q_{i+1/2}$ instead. Then we naturally can estimate the derivative at grid point i as \eqref{appendix_central_diff_good}    This is unbiased and accurate to O($\Delta x^2$) but it doesn’t skip over any values of $q$ like formula \eqref{appendix_central_diff_bad} . So if we set this equal to zero we can only have $q$ constant: the null-space is correct. The MAC grid is set up so that we use this staggered form of the central difference wherever we need to estimate a derivative in the pressure solve (i.e., the incompressibility condition). The staggered MAC grid is perfectly suited for handling pressure and incompressibility, but it’s a little awkward for other uses. For example, if we actually want to evaluate the full velocity vector somewhere, we will always need to use some kind of interpolation even if we’re looking at a grid point! At an arbitrary location in space, we’ll do separate bilinear or trilinear interpolation for each component of velocity, but since those components are offset from each other we will need to compute a different set of interpolation weights for each component. At the grid locations themselves, this boils down to some simple averaging."
+%
+%
+%
+%
+%\subsection*{Second Order Accurate Velocity Interpolation Using Catmull-Rom Splines}
+%Bridson advised to  not use linear interpolation when sampling the value at the location you back traced to (although you are  sure to keep stability).  Jos Stam [Stam 99] mentions that he used linear interpolation instead of higher order interpolation methods because they might lead to instabilities due to the oscillations and overshoots inherent in such interpolants.  He mentions on the other hand, higher order spline approximates may be used, though they tend to smooth out the resulting flows.\cite{Stam 99}  Bridson advises using cubic interpolants (specifically Catmull-Rom splines) to achieve second order accuracy and to clamp any overshoots in the interpolated value to within local bounds to be safe. [i.e. within the grid cell you traced back to]).
+%
+%Chapter 3 in Bridson deals with advection.  A lot of the time is spent on interpolation and how to use the right kind.  
+%"In the interpolation step of semi-Lagrangian advection we are taking a weighted average of values from the previous time step. That is, with each advection step, we are doing an averaging operation. Averaging tends to smooth out or blur sharp features, a process called dissipation. In signal-processing terminology, we have a low-pass filter. A single blurring step is pretty harmless, but if we repeatedly blur every time step, you can imagine there are going to be problems."\cite{Bridson 2009}
+%
+%One particularly simple, but quite effective, strategy for fixing the semi-Lagrangian method presented so far. As we saw in the advection section, the problem mainly lies with the excessive averaging induced by linear interpolation (of the quantity being advected; linearly interpolating the velocity field in which we trace is not the main culprit and can be used as is) \footnote{Look at end of Advection section to see what this is referring to.  The following were my thoughts before reviewing that section thoroughly: *When to use cubic interpolation?  I think the following says when you are looking up a quantity in a backwards trace such as density or a velocity that you are going to advect you need to use cubic interp.  but to find a velocity at an arbitrary point in a grid lerp is fine.  Also remember that the RK2 or RK3 steps to go backwards are only used to choose *where* to interpolate, it is not the interpolation we are talking about when we want to know if to do cubic interpolation*}. Thus, the natural next step is to use sharper interpolation. For example, Fedkiw et al. [Fedkiw et al. 01] proposed using a specially limited form of Catmull-Rom interpolation, which we will explore here.
+%
+%Underlying Catmull-Rom is cubic Hermite spline interpolation. In one dimension, a cubic Hermite spline simply constructs a cubic polynomial on each interval that matches sampled function values and derivatives at the endpoints. That is, the cubic polynomial $p\left(x\right)$ on $\left[x_i, x_{i+1}\right]$ should satisfy
+%
+%\begin{equation*}
+%p(x_i) = f_i
+%\end{equation*}
+%\begin{equation*}
+%p(x_{i+1}) = f_{i+1}
+%\end{equation*}
+%\begin{equation*}
+%\frac{dp}{dx}(x_i) = s_i
+%\end{equation*}
+%\begin{equation*}
+%\frac{dp}{dx}(x_{i+1}) = s_{i+1}
+%\end{equation*}
+%
+%Here $f_i$ is the known function value at $x_i$ and $s_i$ is the known derivative (slope).  Catumull-Rom uses a central finite difference to approximate the derivatives from nearby functional values:
+%
+%\begin{equation*}
+%s_i = \frac{f_{i+1}-f_{i-1}}{2\Delta x}
+%\end{equation*}
+%\begin{equation*}
+%s_{i+1} = \frac{f_{i+2}-f_{i}}{2\Delta x}
+%\end{equation*}
+%
+%Plugging this in, regrouping terms and substituting
+%
+%\begin{equation*}
+%\bar{x} = \frac{x-x_i}{\Delta x}
+%\end{equation*}
+%
+%gives the following:
+%
+%\begin{equation*}
+%\begin{split}
+%p(x) =& f_{i-1}\left(-\frac{1}{2}\bar{x}+ \bar{x}^2-\frac{1}{2}\bar{x}^3\right)\\
+%&+  f_{i}\left(1-\frac{5}{2}\bar{x}^2 + \frac{3}{2}\bar{x}^3\right)\\
+%&+ f_{i+1}\left(\frac{1}{2}\bar{x} + 2\bar{x}^2-\frac{3}{2}\bar{x}^3\right)\\
+%&+ f_{i+2}\left(-\frac{1}{2}\bar{x}^2 +\frac{1}{2}\bar{x}^3\right)
+%\end{split}
+%\end{equation*}
+%
+%This can be shown to have cubic accuracy when approximating a smooth function, as opposed to the lower quadratic accuracy of linear interpolation. To extend this to higher dimensions, we simply interpolate along each dimension in turn, in exactly the same way as bi- or trilinear interpolation can be constructed from one-dimensional linear interpolation. Using Catmull-Rom interpolation in the semi-Lagrangian method for advection boosts the accuracy to second order (from first order for linear interpolation) and significantly reduces the numerical dissipation.
+%
+%However, it doesn’t have quite the same guarantees for stability as linear interpolation. The issue is under- or overshooting: near local maximums or minimums in the data, the cubic can go higher or lower than the data points. Whereas linear interpolating between two data points always gives you a number bounded by those data points, Catmull-Rom interpolation might give you something larger or smaller. There is a worry, then, that if used for advection there might be an unstable feedback loop: if each time step overshoots the data from the previous time step, the solution might grow exponentially.
+%
+%
+%Evaluating the unmodified Catmull-Rom interpolant at the point we care about may be just fine (lie within the local min and max of the data) even if at other points it under- or overshoots. Generally speaking then, it’s preferable to just clamp the interpolated value to lie within the local bounds.
+
+
+\bibliographystyle{acmsiggraph}
+\bibliography{paper}
+
+\end{document}
