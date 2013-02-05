@@ -31,7 +31,14 @@
 #include <stdlib.h>
 
 #ifdef __APPLE__
-#include <OpenCL/opencl.h>
+  #include <OpenGL/gl.h>
+  #include <OpenGL/glu.h> 
+  #include <GLUT/glut.h>
+  #include <OpenGL/CGLCurrent.h>
+  #include <OpenGL/CGLTypes.h>
+  #include <OpenCL/opencl.h>
+  #include <OpenCL/cl_gl_ext.h>
+  #include <OpenGL/CGLDevice.h>
 #else
 #include <CL/cl.h>
 #endif

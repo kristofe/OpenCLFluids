@@ -1,5 +1,5 @@
 #define USE_OPENCL 1
-#define USE_OPENCL_ON_CPU 1
+#define USE_OPENCL_ON_CPU 0
 
 #define RUN_TIMINGS 0
 
@@ -9,6 +9,11 @@
 #define NZ 1
 #define H  1.0f
 
+#ifdef __APPLE__
+  #define GL_SHARING_EXTENSION "cl_APPLE_gl_sharing"
+#else
+  #define GL_SHARING_EXTENSION "cl_khr_gl_sharing"
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -18,6 +23,13 @@
   #include <OpenGL/gl.h>
   #include <OpenGL/glu.h> 
   #include <GLUT/glut.h>
+  #include <OpenGL/CGLDevice.h>
+  #include <OpenGL/CGLCurrent.h>
+  #include <OpenGL/CGLTypes.h>
+  #include <OpenCL/opencl.h>
+  #include <OpenCL/cl_gl_ext.h>
+
+
 #elif WIN32
 #include "GL/glut.h"
 #else
@@ -573,35 +585,7 @@ static void display_func ( void )
 }
 
 
-/*
-  ----------------------------------------------------------------------
-   open_glut_window --- open a glut compatible window and set callbacks
-  ----------------------------------------------------------------------
-*/
 
-static void open_glut_window ( void )
-{
-	glutInitDisplayMode ( GLUT_RGBA | GLUT_DOUBLE );
-
-	glutInitWindowPosition ( 0, 0 );
-	glutInitWindowSize ( win_x, win_y );
-	win_id = glutCreateWindow ( "Fluids" );
-
-	glClearColor ( 0.0f, 0.0f, 0.0f, 1.0f );
-	glClear ( GL_COLOR_BUFFER_BIT );
-	glutSwapBuffers ();
-	glClear ( GL_COLOR_BUFFER_BIT );
-	glutSwapBuffers ();
-
-	pre_display ();
-
-	glutKeyboardFunc ( key_func );
-	glutMouseFunc ( mouse_func );
-	glutMotionFunc ( motion_func );
-	glutReshapeFunc ( reshape_func );
-	glutIdleFunc ( idle_func );
-	glutDisplayFunc ( display_func );
-}
 
 
 /*
@@ -929,16 +913,49 @@ void testCG(){
   
   
 }
-#define GL_SHARING_EXTENSION "cl_khr_gl_sharing"
-#define GL_SHARING_EXTENSION_APPLE "cl_APPLE_gl_sharing"
 
 
-void test_opencl_opengl_interop()
+
+static void test_opencl_opengl_interop()
 {
-  init_opencl();
+  cl_int status;
+  
+  CGLContextObj gl_context = CGLGetCurrentContext();
+//  const char * err = CGLErrorString(kCGLContext);
+  
+  CGLShareGroupObj kCGLShareGroup = CGLGetShareGroup(gl_context);
+  
+
+  cl_context_properties properties[] = {
+    CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE,
+    (cl_context_properties)kCGLShareGroup, 0
+  };
+
+  clData.ctx = clCreateContext(properties, 0, 0, 0, 0, &status);
+  CHECK_CL_ERROR(status, "clCreateContext");
+  
+  // And now we can ask OpenCL which particular device is being used by
+  // OpenGL to do the rendering, currently:
+  cl_device_id renderer;
+  clGetGLContextInfoAPPLE(clData.ctx, gl_context,
+                          CL_CGL_DEVICE_FOR_CURRENT_VIRTUAL_SCREEN_APPLE, sizeof(renderer),
+                          &renderer, NULL);
+  
+  cl_uint id_in_use;
+  clGetDeviceInfo(renderer, CL_DEVICE_VENDOR_ID, sizeof(cl_uint),
+                  &id_in_use, NULL);
+  
+  clData.device = renderer;
+  
+  cl_command_queue_properties qprops = 0;
+  
+  clData.queue = clCreateCommandQueue(clData.ctx, clData.device, qprops, &status);
+  CHECK_CL_ERROR(status, "clCreateCommandQueue");
+  
+  
+  
   
   int extensionExists = 0;
-  int isAppleExtension = 0;
   
   size_t extensionSize;
   int ciErrNum = clGetDeviceInfo( clData.device, CL_DEVICE_EXTENSIONS, 0, NULL, &extensionSize );
@@ -952,18 +969,14 @@ void test_opencl_opengl_interop()
   {
     printf ("%s\n",pch);
     if(strcmp(pch, GL_SHARING_EXTENSION) == 0) {
-      printf("Device supports regular gl sharing\n");
+      printf("Device supports gl sharing\n");
       extensionExists = 1;
-      break;
-    }
-    if(strcmp(pch, GL_SHARING_EXTENSION_APPLE) == 0) {
-      printf("Device supports APPLE gl sharing\n");
-      extensionExists = 1;
-      isAppleExtension = 1;
       break;
     }
     pch = strtok (NULL, " ");
   }
+  
+  
   
 }
 
@@ -1006,14 +1019,45 @@ void run_opencl_test(){
   
 }
 
+static void open_glut_window ( void )
+{
+	glutInitDisplayMode ( GLUT_RGBA | GLUT_DOUBLE );
+  glutInitWindowPosition ( 0, 0 );
+	glutInitWindowSize ( win_x, win_y );
+  win_id = glutCreateWindow ( "Fluids" );
+  
+  
+  
+	glClearColor ( 0.0f, 0.0f, 0.0f, 1.0f );
+	glClear ( GL_COLOR_BUFFER_BIT );
+	glutSwapBuffers ();
+	glClear ( GL_COLOR_BUFFER_BIT );
+	glutSwapBuffers ();
+  
+	pre_display ();
+  
+	glutKeyboardFunc ( key_func );
+	glutMouseFunc ( mouse_func );
+	glutMotionFunc ( motion_func );
+	glutReshapeFunc ( reshape_func );
+	glutIdleFunc ( idle_func );
+	glutDisplayFunc ( display_func );
+}
 
 int main ( int argc, char ** argv )
 {
   //testCG();
-  test_opencl_opengl_interop();
+  win_x = 512;
+	win_y = 512;
+  
   
 	glutInit ( &argc, argv );
-
+  
+	open_glut_window ();
+ 
+  //test_opencl_opengl_interop();
+  
+  
   dt = 0.1f;
   force = 10.0f;
   source = 10.0f;
@@ -1031,8 +1075,6 @@ int main ( int argc, char ** argv )
 	printf ( "\t Quit by pressing the 'q' key\n" );
 
 	dvel = 0;
-	win_x = 700;
-	win_y = 700;
 
 	step = 0;
 	maccormack = 0;
@@ -1102,7 +1144,7 @@ int main ( int argc, char ** argv )
 #endif
    
    
-	open_glut_window ();
+  
 
 	glutMainLoop ();
 

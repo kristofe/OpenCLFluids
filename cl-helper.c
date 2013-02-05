@@ -27,7 +27,7 @@
 #include <string.h>
 
 
-
+#define OPENCL_SHARE_WITH_OPENGL 1
 
 #define MAX_NAME_LEN 1000
 
@@ -330,16 +330,65 @@ void create_context_on(const char *plat_name, const char*dev_name, cl_uint idx,
             free(devices);
             free(platforms);
 
+            cl_int status;
+            
+            // create a context
+#if OPENCL_SHARE_WITH_OPENGL
+  #if __APPLE__
+//              CGLContextObj kCGLContext = CGLGetCurrentContext();
+//              CGLShareGroupObj kCGLShareGroup = CGLGetShareGroup(kCGLContext);
+//              cl_context_properties cps[] = {
+//                CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE, (cl_context_properties)kCGLShareGroup,
+//                CL_CONTEXT_PLATFORM, (cl_context_properties) plat, 0 };
+//            
+            
+            CGLContextObj gl_context = CGLGetCurrentContext();
+            CGLShareGroupObj share_group = CGLGetShareGroup(gl_context);
+            
+            cl_context_properties properties[] = {
+              CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE,
+              (cl_context_properties)share_group, 0
+            };
+            *ctx = clCreateContext(properties, 0, 0, 0, 0, 0);
+            clGetGLContextInfoAPPLE(*ctx, gl_context,
+                                    CL_CGL_DEVICE_FOR_CURRENT_VIRTUAL_SCREEN_APPLE, sizeof(dev),
+                                    &dev, NULL);
+            
+            
+            
+  #elif WIN32
+              cl_context_properties cps[] = {
+                CL_GL_CONTEXT_KHR, (cl_context_properties) wglGetCurrentContext(), CL_WGL_HDC_KHR, (cl_context_properties) wglGetCurrentDC(), CL_CONTEXT_PLATFORM, (cl_context_properties) plat, 0};
+            
+            //Probably won't work because &dev should correspond to glContext
+            *ctx = clCreateContext(cps, 1, &dev, NULL, NULL, &status);
+            CHECK_CL_ERROR(status, "clCreateContext");
+  #else
+              // Linux
+              cl_context_properties cps[] = {
+                CL_GL_CONTEXT_KHR, ( cl_context_properties) glXGetCurrentContext(), CL_GLX_DISPLAY_KHR, (cl_context_properties) glXGetCurrentDisplay(), CL_CONTEXT_PLATFORM, (cl_context_properties) plat, 0 };
+            //Probably won't work because &dev should correspond to glContext
+            *ctx = clCreateContext(cps, 1, &dev, NULL, NULL, &status);
+            CHECK_CL_ERROR(status, "clCreateContext");
+#endif
+
+#else
             // create a context
             cl_context_properties cps[3] = {
               CL_CONTEXT_PLATFORM, (cl_context_properties) plat, 0 };
-
-            cl_int status;
-            *ctx = clCreateContext(
-                cps, 1, &dev, NULL, NULL, &status);
-            CHECK_CL_ERROR(status, "clCreateContext");
-
             // create a command queue
+            cl_command_queue_properties qprops = 0;
+            if (enable_profiling)
+              qprops |= CL_QUEUE_PROFILING_ENABLE;
+            
+            *queue = clCreateCommandQueue(*ctx, dev, qprops, &status);
+            CHECK_CL_ERROR(status, "clCreateCommandQueue");
+#endif
+//            *ctx = clCreateContext(
+//                                   cps, 1, &dev, NULL, NULL, &status);
+//            CHECK_CL_ERROR(status, "clCreateContext");
+
+//            // create a command queue
             cl_command_queue_properties qprops = 0;
             if (enable_profiling)
               qprops |= CL_QUEUE_PROFILING_ENABLE;
