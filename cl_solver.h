@@ -20,6 +20,7 @@
 #include <math.h>
 
 typedef struct CLData {
+  cl_device_id device;
   cl_context ctx;
   cl_command_queue queue;
   cl_kernel advect_velocity_kernel;
@@ -63,7 +64,13 @@ typedef struct CLData {
   
 } CLData;
 
-
+void set_device_id(CLData * clData){
+  cl_device_id dev;
+  CALL_CL_GUARDED(clGetCommandQueueInfo,
+                  (clData->queue, CL_QUEUE_DEVICE, sizeof dev, &dev, NULL));
+  
+  clData->device = dev;
+}
 
 void init_cl_data(CLData * clData, float h, int n, int dn, int nx, int ny, int nz)
 {

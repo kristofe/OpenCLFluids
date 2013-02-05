@@ -78,6 +78,7 @@ void init_opencl()
 #endif
 #endif
   
+  set_device_id(&clData);
   
    init_cl_data(&clData,H,NX*NY*NZ,4, NX,NY,NZ);
 }
@@ -928,7 +929,43 @@ void testCG(){
   
   
 }
+#define GL_SHARING_EXTENSION "cl_khr_gl_sharing"
+#define GL_SHARING_EXTENSION_APPLE "cl_APPLE_gl_sharing"
 
+
+void test_opencl_opengl_interop()
+{
+  init_opencl();
+  
+  int extensionExists = 0;
+  int isAppleExtension = 0;
+  
+  size_t extensionSize;
+  int ciErrNum = clGetDeviceInfo( clData.device, CL_DEVICE_EXTENSIONS, 0, NULL, &extensionSize );
+  char* extensions = (char*) malloc( extensionSize);
+  ciErrNum = clGetDeviceInfo( clData.device, CL_DEVICE_EXTENSIONS, extensionSize, extensions, &extensionSize);
+  
+  char * pch;
+  //printf ("Splitting extensions string \"%s\" into tokens:\n",extensions);
+  pch = strtok (extensions," ");
+  while (pch != NULL)
+  {
+    printf ("%s\n",pch);
+    if(strcmp(pch, GL_SHARING_EXTENSION) == 0) {
+      printf("Device supports regular gl sharing\n");
+      extensionExists = 1;
+      break;
+    }
+    if(strcmp(pch, GL_SHARING_EXTENSION_APPLE) == 0) {
+      printf("Device supports APPLE gl sharing\n");
+      extensionExists = 1;
+      isAppleExtension = 1;
+      break;
+    }
+    pch = strtok (NULL, " ");
+  }
+  
+}
 
 void run_opencl_test(){
   
@@ -973,6 +1010,7 @@ void run_opencl_test(){
 int main ( int argc, char ** argv )
 {
   //testCG();
+  test_opencl_opengl_interop();
   
 	glutInit ( &argc, argv );
 
