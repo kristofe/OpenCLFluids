@@ -20,9 +20,9 @@
 #include <stdbool.h>
 
 #ifdef __APPLE__
-  #include <OpenGL/gl.h>
-  #include <OpenGL/glu.h> 
-  #include <GLUT/glut.h>
+  #include <OpenGL/gl3.h>
+  //#include <OpenGL/glu.h>
+  #include <GLUT/glsmap.h>
   #include <OpenGL/CGLDevice.h>
   #include <OpenGL/CGLCurrent.h>
   #include <OpenGL/CGLTypes.h>
@@ -1021,7 +1021,13 @@ void run_opencl_test(){
 
 static void open_glut_window ( void )
 {
-	glutInitDisplayMode ( GLUT_RGBA | GLUT_DOUBLE );
+  
+#ifdef __APPLE__
+	glutInitDisplayMode (GLUT_3_2_CORE_PROFILE | GLUT_RGBA | GLUT_DOUBLE );
+#else 
+glutInitDisplayMode (GLUT_RGBA | GLUT_DOUBLE );
+#endif
+  
   glutInitWindowPosition ( 0, 0 );
 	glutInitWindowSize ( win_x, win_y );
   win_id = glutCreateWindow ( "Fluids" );
@@ -1053,9 +1059,15 @@ int main ( int argc, char ** argv )
   
 	glutInit ( &argc, argv );
   
+  
 	open_glut_window ();
- 
-  //test_opencl_opengl_interop();
+  
+  printf("%s\n%s\n",
+         glGetString(GL_RENDERER),  // e.g. Intel HD Graphics 3000 OpenGL Engine
+         glGetString(GL_VERSION)    // e.g. 3.2 INTEL-8.0.61
+         );
+  
+  test_opencl_opengl_interop();
   
   
   dt = 0.1f;
