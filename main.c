@@ -4,9 +4,9 @@
 #define RUN_TIMINGS 0
 
 //GRID DIMENSIONS
-#define NX 128
-#define NY 128
-#define NZ 1
+#define NX 64
+#define NY 64
+#define NZ 64
 #define H  1.0f
 
 #ifdef __APPLE__
@@ -70,6 +70,9 @@ int step;
 int maccormack;
 int vorticity;
 int useCG;
+
+//OpenGL buffers to replace the opencl arrays
+unsigned int gl_tex3d_dens, gl_tex3d_dens_prev;
 
 CLData clData;
 
@@ -215,9 +218,24 @@ static int allocate_data ( void )
 	//particle_system = new CombustionParticleSystem(100,win_x,win_y,N);
   g_laplacian_matrix = (float *) malloc ( size*size*sizeof(float) );
   
-
-  
 	return ( 1 );
+}
+
+static void create_opengl_textures()
+{
+  glGentTextures(1,&gl_tex3d_dens);
+  glBindTexture(GL_TEXTURE_3D, gl_tex3d_dens);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
+  
+  //Don't know about GL_R32F GL_RED.  Do I need to upload data?  I only want zeros to start.
+  glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, NX, NY, NZ, 0, GL_RED, GL_FLOAT, g_dens);
+  
+  
+  glGentTextures(1,&gl_tex3d_dens_prev);
 }
 
 
@@ -1098,18 +1116,6 @@ int main ( int argc, char ** argv )
   
 
   
-  //setupMatrix(g_laplacian_matrix);
-
-//	FOR_EACH_FACE
-//	{
-//		//if(i < NX - NX*0.4 && i > NX*0.4 
-//		//	&&
-//		//   j < NY - NY*0.4 && j > NY*0.4 )
-//		{
-//			g_u_prev[IX(i,j,0)] =  -0.01 * cosf(3.14159 * 2.0 * i/NX);
-//			g_v_prev[IX(i,j,0)] =  0.01 * sinf(3.14159 * 2.0 * j/NY);
-//		}
-//	}
 
 #if RUN_TIMINGS
   runTimings();
@@ -1119,23 +1125,7 @@ int main ( int argc, char ** argv )
 	copy_grid(g_u_prev, g_u);
 	copy_grid(g_v_prev, g_v);
   
-  g_dens_prev[IX(16,3,0)] = 10.0f;
-  //g_u_prev[IX(16,3,0)] = 10.0f;
-  
-	/*
-	calculate_divergence(g_divergence, g_u_prev, g_v_prev, g_w_prev, dt);
-	pressure_solve(g_pressure,g_pressure_prev, g_divergence, dt);
-	pressure_apply(g_u_prev, g_v_prev, g_w_prev, g_pressure, dt);
-	//project(dt,g_u_prev,g_v_prev, g_w_prev, g_divergence, g_pressure, g_pressure_prev);
-	SWAP(g_u_prev,g_u);
-	SWAP(g_v_prev,g_v);
-	SWAP(g_w_prev,g_w);
 
-	if(!check_divergence(g_u_prev, g_v_prev, g_w_prev))
-	{
-		printf("Initial field wasn't divergence free!\n");
-	}
-	*/
 
 
 //print_platforms_devices();
