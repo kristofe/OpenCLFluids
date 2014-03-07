@@ -1,12 +1,12 @@
 #define USE_OPENCL 1
-#define USE_OPENCL_ON_CPU 0
+#define USE_OPENCL_ON_CPU 1
 
 #define RUN_TIMINGS 0
 
 //GRID DIMENSIONS
 #define NX 64
 #define NY 64
-#define NZ 64
+#define NZ 1
 #define H  1.0f
 
 #ifdef __APPLE__
@@ -1040,11 +1040,11 @@ void run_opencl_test(){
 static void open_glut_window ( void )
 {
   
-#ifdef __APPLE__
-	glutInitDisplayMode (GLUT_3_2_CORE_PROFILE | GLUT_RGBA | GLUT_DOUBLE );
-#else 
+//#ifdef __APPLE__
+//	glutInitDisplayMode (GLUT_3_2_CORE_PROFILE | GLUT_RGBA | GLUT_DOUBLE );
+//#else 
 glutInitDisplayMode (GLUT_RGBA | GLUT_DOUBLE );
-#endif
+//#endif
   
   glutInitWindowPosition ( 0, 0 );
 	glutInitWindowSize ( win_x, win_y );
