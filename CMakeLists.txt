@@ -21,7 +21,7 @@ set(HEADERS
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -std=c++11")
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -g -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter")
 
-SET(CMAKE_OSX_ARCHITECTURES "i386")
+#SET(CMAKE_OSX_ARCHITECTURES "i386")
 
 
 ##SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -std=c++11 -stdlib=libc++ -O3 -msse -msse2")
@@ -36,6 +36,7 @@ endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
 
 
 #set(KDSLIB_PATH "/Users/kristofe/Documents/Projects/KDSLib/")
+set(GLFWLIB_PATH "/Users/kristofe/Documents/Projects/glfw-3.0.1/CMake/src")
 #set(KDSLIB_BUILD_PATH ${KDSLIB_PATH}build)
 #set(KDSLIB_INCLUDE_PATH ${KDSLIB_PATH}include)
 #set(GLM_INCLUDE_PATH ${KDSLIB_PATH})
@@ -44,11 +45,11 @@ endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
 
 ##add_subdirectory(${KDSLIB_PATH} ${KDSLIB_BUILD_PATH})
 #include_directories(${KDSLIB_INCLUDE_PATH} ${GLM_INCLUDE_PATH})
-#link_directories(${KDSLIB_BUILD_PATH})
+link_directories(${KDSLIB_BUILD_PATH} ${GLFWLIB_PATH})
 
 if(APPLE)
-#   FIND_LIBRARY(IOKIT_LIBRARY IOKit)
-#   FIND_LIBRARY(COCOA_LIBRARY Cocoa)
+   FIND_LIBRARY(IOKIT_LIBRARY IOKit)
+   FIND_LIBRARY(COCOA_LIBRARY Cocoa)
    FIND_LIBRARY(GLUT_LIBRARY GLUT)
    FIND_LIBRARY(OPENGL_LIBRARY OpenGL)
    FIND_LIBRARY(OPENCL_LIBRARY OpenCL)
@@ -61,7 +62,7 @@ if(APPLE)
                      OPENCL_LIBRARY
                      )
 #SET(EXTRA_LIBS ${IOKIT_LIBRARY} ${COCOA_LIBRARY} ${OPENGL_LIBRARY} libKDSLib.a libglfw3.a )
-   SET(EXTRA_LIBS ${GLUT_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY})
+   SET(EXTRA_LIBS ${IOKIT_LIBRARY} ${COCOA_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} libglfw3.a)
 ENDIF(APPLE)
 
 

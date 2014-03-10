@@ -4,8 +4,8 @@
 #define RUN_TIMINGS 0
 
 //GRID DIMENSIONS
-#define NX 64
-#define NY 64
+#define NX 96
+#define NY 96
 #define NZ 1
 #define H  1.0f
 
@@ -15,34 +15,35 @@
   #define GL_SHARING_EXTENSION "cl_khr_gl_sharing"
 #endif
 
-#define GLFW_INCLUDE_CLCOREARB
-
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
 
-
-
 #ifdef __APPLE__
-  //#include <OpenGL/gl3.h>
-  //#include <GLUT/glsmap.h>
-  //#include <OpenGL/CGLDevice.h>
-  //#include <OpenGL/CGLCurrent.h>
+  #include <OpenGL/gl3.h>
+  //#include <OpenGL/glu.h>
+  #include <GLUT/glsmap.h>
+  #include <OpenGL/CGLDevice.h>
+  #include <OpenGL/CGLCurrent.h>
+  #include <OpenGL/CGLTypes.h>
   #include <OpenCL/opencl.h>
   #include <OpenCL/cl_gl_ext.h>
+
+
+#elif WIN32
+#include "GL/glut.h"
+#else
+#include <GL/glut.h>
 #endif
-#include "GLFW/glfw3.h" // - lib is in /usr/local/lib/libglfw3.a
 
 #include "cl-helper.h"
 #include "timing.h"
 
+//#include <OpenGL/glut.h>
 
 //#include "combustion_particle_system.h"
 #include "second_order_solver.h"
 #include "cl_solver.h"
-
-
 
 
 
@@ -231,8 +232,7 @@ static void create_opengl_textures()
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
   
   //Don't know about GL_R32F GL_RED.  Do I need to upload data?  I only want zeros to start.
-  //glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, NX, NY, NZ, 0, GL_RED, GL_FLOAT, g_dens);
-  glTexImage3D(GL_TEXTURE_3D, 0, GL_R, NX, NY, NZ, 0, GL_RED, GL_FLOAT, g_dens);
+  glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, NX, NY, NZ, 0, GL_RED, GL_FLOAT, g_dens);
   
   
   glGentTextures(1,&gl_tex3d_dens_prev);
@@ -245,6 +245,20 @@ static void create_opengl_textures()
   ----------------------------------------------------------------------
 */
 
+static void pre_display ( void )
+{
+	glViewport ( 0, 0, win_x, win_y );
+	glMatrixMode ( GL_PROJECTION );
+	glLoadIdentity ();
+	gluOrtho2D ( 0.0, 1.0, 0.0, 1.0 );
+	glClearColor ( 0.0f, 0.0f, 0.0f, 1.0f );
+	glClear ( GL_COLOR_BUFFER_BIT );
+}
+
+static void post_display ( void )
+{
+	glutSwapBuffers ();
+}
 
 static void draw_velocity ( void )
 {
@@ -463,8 +477,17 @@ static void motion_func ( int x, int y )
 	my = y;
 }
 
+static void reshape_func ( int width, int height )
+{
+	glutSetWindow ( win_id );
+	glutReshapeWindow ( width, height );
 
-static void simulate ( void )
+	win_x = width;
+	win_y = height;
+	//particle_system->update_win(win_x,win_xy);
+}
+
+static void idle_func ( void )
 {
 	//if(step)
 	{
@@ -553,13 +576,19 @@ static void simulate ( void )
 		step = 0;
 	}
 
+	glutSetWindow ( win_id );
+	glutPostRedisplay ();
 
 
 
 }
 
-static void display( void )
+static void display_func ( void )
 {
+	pre_display ();
+
+
+
 		if ( dvel )
     {
       draw_pressure();
@@ -570,6 +599,7 @@ static void display( void )
       draw_density ();
     }
 
+	post_display ();
 }
 
 
@@ -1007,9 +1037,48 @@ void run_opencl_test(){
   
 }
 
-void init ( )
+static void open_glut_window ( void )
+{
+  
+//#ifdef __APPLE__
+//	glutInitDisplayMode (GLUT_3_2_CORE_PROFILE | GLUT_RGBA | GLUT_DOUBLE );
+//#else 
+glutInitDisplayMode (GLUT_RGBA | GLUT_DOUBLE );
+//#endif
+  
+  glutInitWindowPosition ( 0, 0 );
+	glutInitWindowSize ( win_x, win_y );
+  win_id = glutCreateWindow ( "Fluids" );
+  
+  
+  
+	glClearColor ( 0.0f, 0.0f, 0.0f, 1.0f );
+	glClear ( GL_COLOR_BUFFER_BIT );
+	glutSwapBuffers ();
+	glClear ( GL_COLOR_BUFFER_BIT );
+	glutSwapBuffers ();
+  
+	pre_display ();
+  
+	glutKeyboardFunc ( key_func );
+	glutMouseFunc ( mouse_func );
+	glutMotionFunc ( motion_func );
+	glutReshapeFunc ( reshape_func );
+	glutIdleFunc ( idle_func );
+	glutDisplayFunc ( display_func );
+}
+
+int main ( int argc, char ** argv )
 {
   //testCG();
+  win_x = 512;
+	win_y = 512;
+  
+  
+	glutInit ( &argc, argv );
+  
+  
+	open_glut_window ();
   
   printf("%s\n%s\n",
          glGetString(GL_RENDERER),  // e.g. Intel HD Graphics 3000 OpenGL Engine
@@ -1079,95 +1148,12 @@ void init ( )
    
   
 
+	glutMainLoop ();
 
-
-  
-}
-
-
-void hintOpenGL32CoreProfile(){
-  return;
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-}
-
-void sizeViewport(GLFWwindow* window){
-  glfwGetFramebufferSize(window, &win_x, &win_y);
-  glViewport(0, 0, win_x, win_y);
-
-	glMatrixMode ( GL_PROJECTION );
-	glLoadIdentity ();
-	gluOrtho2D ( 0.0, 1.0, 0.0, 1.0 );
-	glClearColor ( 0.0f, 0.0f, 0.0f, 1.0f );
-	glClear ( GL_COLOR_BUFFER_BIT );}
-
-static void error_callback(int error, const char* description)
-{
-  fputs(description, stderr);
-}
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-  if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-    glfwSetWindowShouldClose(window, GL_TRUE);
-}
-
-static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
-{
-  printf("mouse button callback");
-  mouse_down[button] = action == GLFW_PRESS;
-}
-
-static void mouse_position_callback(GLFWwindow* window, double xpos, double ypos)
-{
-  omx = mx = (int)xpos;
-	omy = my = (int)ypos;
-}
-
-
-
-int main(void)
-{
-  win_x = 512;
-	win_y = 512;
-  GLFWwindow* window;
-  glfwSetErrorCallback(error_callback);
-  if (!glfwInit())
-    exit(EXIT_FAILURE);
-
-  hintOpenGL32CoreProfile();
-  window = glfwCreateWindow(win_x, win_y, "Simple example", NULL, NULL);
-  if (!window)
-  {
-    glfwTerminate();
-    exit(EXIT_FAILURE);
-  }
-  glfwMakeContextCurrent(window);
-  glfwSetKeyCallback(window, key_callback);
-  glfwSetMouseButtonCallback(window, mouse_button_callback);
-  glfwSetCursorPosCallback(window, mouse_position_callback);
-
-  //std::cout << GLUtil::getOpenGLInfo() << std::endl;std::cout.flush();
-
-  init();
-
-  while (!glfwWindowShouldClose(window))
-  {
-    sizeViewport(window);
-
-    simulate();
-    display();
-    
-    glfwSwapBuffers(window);
-    glfwPollEvents();
-  }
-
-  #if USE_OPENCL
+#if USE_OPENCL
    cleanup_cl(&clData);
 #endif
-
-  glfwDestroyWindow(window);
-  glfwTerminate();
-  exit(EXIT_SUCCESS);
+  
+	exit ( 0 );
 }
+
