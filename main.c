@@ -1,11 +1,11 @@
 #define USE_OPENCL 1
-#define USE_OPENCL_ON_CPU 1
+#define USE_OPENCL_ON_CPU 0
 
 #define RUN_TIMINGS 0
 
 //GRID DIMENSIONS
-#define NX 64
-#define NY 64
+#define NX 128
+#define NY 128
 #define NZ 1
 #define H  1.0f
 
@@ -25,10 +25,6 @@
 
 
 #ifdef __APPLE__
-  //#include <OpenGL/gl3.h>
-  //#include <GLUT/glsmap.h>
-  //#include <OpenGL/CGLDevice.h>
-  //#include <OpenGL/CGLCurrent.h>
   #include <OpenCL/opencl.h>
   #include <OpenCL/cl_gl_ext.h>
 #endif
@@ -88,7 +84,8 @@ void init_opencl()
 #if USE_OPENCL_ON_CPU
   create_context_on("Apple", "Intel", 0, &clData.ctx, &clData.queue, 0);
 #else
-   create_context_on("Apple", "GeForce", 0, &clData.ctx, &clData.queue, 0);
+  create_context_on("Apple", "Intel", 0, &clData.ctx, &clData.queue, 0);
+  //create_context_on("Apple", "GeForce", 0, &clData.ctx, &clData.queue, 0);
 #endif
 #endif
   
@@ -404,7 +401,7 @@ static void get_from_UI ( float * d, float * u, float * v, float * heat, float *
   ----------------------------------------------------------------------
 */
 
-static void key_func ( unsigned char key, int x, int y )
+static void key_func ( unsigned char key)
 {
 	switch ( key )
 	{
@@ -1111,18 +1108,23 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 {
   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     glfwSetWindowShouldClose(window, GL_TRUE);
+  if(action == GLFW_PRESS)
+    key_func(key);
 }
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
-  printf("mouse button callback");
   mouse_down[button] = action == GLFW_PRESS;
 }
 
 static void mouse_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
-  omx = mx = (int)xpos;
-	omy = my = (int)ypos;
+  omx = mx;
+	omy = my;
+
+  mx = (int)(xpos + 0.5);
+	my = (int)(ypos + 0.5);
+
 }
 
 
