@@ -9,12 +9,6 @@
 #define NZ 1
 #define H  1.0f
 
-#ifdef __APPLE__
-  #define GL_SHARING_EXTENSION "cl_APPLE_gl_sharing"
-#else
-  #define GL_SHARING_EXTENSION "cl_khr_gl_sharing"
-#endif
-
 #define GLFW_INCLUDE_CLCOREARB
 
 
@@ -900,6 +894,12 @@ void testCG(){
 }
 
 
+
+#ifdef __APPLE__
+  #define GL_SHARING_EXTENSION "cl_APPLE_gl_sharing"
+#else
+  #define GL_SHARING_EXTENSION "cl_khr_gl_sharing"
+#endif
 
 static void test_opencl_opengl_interop()
 {
