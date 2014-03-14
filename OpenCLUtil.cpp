@@ -1,29 +1,4 @@
-/*
- * Copyright (c) 2010 Andreas Kloeckner
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
-
-
-
-
-#include "cl-helper.h"
+#include "OpenCLUtil.h"
 #include <string.h>
 
 
@@ -33,7 +8,7 @@
 
 
 
-const char *cl_error_to_str(cl_int e)
+const char * OpenCLUtil::cl_error_to_str(cl_int e)
 {
   switch (e)
   {
@@ -101,10 +76,7 @@ const char *cl_error_to_str(cl_int e)
   }
 }
 
-
-
-
-void print_platforms_devices()
+void OpenCLUtil::print_platforms_devices()
 {
   // get number of platforms
   cl_uint plat_count;
@@ -157,10 +129,7 @@ void print_platforms_devices()
 
 
 
-/* Read a line from stdin. C makes things simple. :)
- * From http://stackoverflow.com/a/314422/1148634
- */
-char *read_a_line(void)
+char *OpenCLUtil::read_a_line(void)
 {
   char * line = (char *) malloc(MAX_NAME_LEN), * linep = line;
   size_t lenmax = MAX_NAME_LEN, len = lenmax;
@@ -197,15 +166,11 @@ char *read_a_line(void)
 }
 
 
-
-
-const char *CHOOSE_INTERACTIVELY = "INTERACTIVE";
-
-
+//TODO: Move to general utility class or header
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
-void create_context_on(const char *plat_name, const char*dev_name, cl_uint idx,
+void OpenCLUtil::create_context_on(const char *plat_name, const char*dev_name, cl_uint idx,
     cl_context *ctx, cl_command_queue *queue, int enable_profiling)
 {
   char dev_sel_buf[MAX_NAME_LEN];
@@ -223,7 +188,8 @@ void create_context_on(const char *plat_name, const char*dev_name, cl_uint idx,
 
   // print menu, if requested
 #ifndef CL_HELPER_FORCE_INTERACTIVE
-  if (plat_name == CHOOSE_INTERACTIVELY) // yes, we want exactly that pointer
+  //if (plat_name == CHOOSE_INTERACTIVELY) // yes, we want exactly that pointer
+  if (strcmp(plat_name, CHOOSE_INTERACTIVELY) == 0) 
 #endif
   {
     puts("Choose platform:");
@@ -416,7 +382,7 @@ void create_context_on(const char *plat_name, const char*dev_name, cl_uint idx,
 
 
 
-char *read_file(const char *filename)
+char * OpenCLUtil::read_file(const char *filename)
 {
   FILE *f = fopen(filename, "r");
   CHECK_SYS_ERROR(!f, "read_file: opening file");
@@ -444,7 +410,7 @@ char *read_file(const char *filename)
 
 
 
-cl_kernel kernel_from_string(cl_context ctx,
+cl_kernel OpenCLUtil::kernel_from_string(cl_context ctx,
     char const *knl, char const *knl_name, char const *options)
 {
   // create an OpenCL program (may have multiple kernels)
@@ -497,7 +463,7 @@ cl_kernel kernel_from_string(cl_context ctx,
 
 
 
-void print_device_info(cl_device_id device)
+void OpenCLUtil::print_device_info(cl_device_id device)
 {
   // adapted from http://graphics.stanford.edu/~yoel/notes/clInfo.c
 
@@ -745,7 +711,7 @@ void print_device_info(cl_device_id device)
   printf("---------------------------------------------------------------------\n");
 }
 
-void get_device_name_from_queue(cl_command_queue queue, char * buf, int bufsize)
+void OpenCLUtil::get_device_name_from_queue(cl_command_queue queue, char * buf, int bufsize)
 {
    cl_device_id dev;
    CALL_CL_GUARDED(clGetCommandQueueInfo,
@@ -755,7 +721,7 @@ void get_device_name_from_queue(cl_command_queue queue, char * buf, int bufsize)
    
 }
 
-void print_device_info_from_queue(cl_command_queue queue)
+void OpenCLUtil::print_device_info_from_queue(cl_command_queue queue)
 {
   cl_device_id dev;
   CALL_CL_GUARDED(clGetCommandQueueInfo,

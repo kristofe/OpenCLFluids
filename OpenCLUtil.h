@@ -1,30 +1,6 @@
-/*
- * Copyright (c) 2010, 2012 Andreas Kloeckner
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
 
-
-
-
-#ifndef NYUHPC_CL_HELPER
-#define NYUHPC_CL_HELPER
+#ifndef OPENCL_UTIL_H
+#define OPENCL_UTIL_H
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -33,7 +9,6 @@
 #ifdef __APPLE__
   #include <OpenGL/gl.h>
   #include <OpenGL/glu.h> 
-  #include <GLUT/glut.h>
   #include <OpenGL/CGLCurrent.h>
   #include <OpenGL/CGLTypes.h>
   #include <OpenCL/opencl.h>
@@ -42,6 +17,12 @@
 #else
 #include <CL/cl.h>
 #endif
+
+// A macro to disallow the copy constructor and operator= functions
+// This should be used in the private: declarations for a class
+#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
+  TypeName(const TypeName&);               \
+  void operator=(const TypeName&)
 
 /* An error check macro for OpenCL.
  *
@@ -57,7 +38,7 @@
     fprintf(stderr, \
         "*** '%s' in '%s' on line %d failed with error '%s'.\n", \
         WHAT, __FILE__, __LINE__, \
-        cl_error_to_str(STATUS_CODE)); \
+        OpenCLUtil::cl_error_to_str(STATUS_CODE)); \
     abort(); \
   }
 
@@ -92,66 +73,6 @@
     perror(MSG); \
     abort(); \
   }
-
-/* Return a string describing the OpenCL error code 'e'.
- */
-const char *cl_error_to_str(cl_int e);
-
-/* Print a list of available OpenCL platforms and devices
- * to standard output.
- */
-void print_platforms_devices();
-
-/* Create an OpenCL context and a matching command queue on a platform from a
- * vendor whose name contains 'plat_name' on a device whose name contains
- * 'dev_name'. Both 'plat_name' and 'dev_name' may be NULL, indicating no
- * preference in the matter.
- *
- * If multiple devices match both 'plat_name' and 'dev_name', then 'idx'
- * prescribes the number of the device that should be chosen.
- *
- * You may also use the special value CHOOSE_INTERACTIVELY to offer the user
- * a choice. You should use this value for code you turn in.
- *
- * This function always succeeds. (If an error occurs, the program
- * is aborted.
- *
- * You can force interactive querying by defining the
- * CL_HELPER_FORCE_INTERACTIVE macro when compiling cl-helper.c.
- * You may do so by passing the -DCL_HELPER_FORCE_INTERACTIVE
- * compiler option.
- */
-extern const char *CHOOSE_INTERACTIVELY;
-void create_context_on(const char *plat_name, const char*dev_name, cl_uint
-    idx, cl_context *ctx, cl_command_queue *queue, int enable_profiling);
-
-/* Read contents of file 'filename'.
- * Return as a new string. You must free the string when you're done with it.
- *
- * This function always succeeds. (If an error occurs, the program
- * is aborted.
- */
-char *read_file(const char *filename);
-
-/* Create a new OpenCL kernel from the code in the string 'knl'.
- * 'knl_name' is the name of the kernel function, and 'options',
- * if not NULL, is a string containing compiler flags.
- *
- * You must release the resulting kernel when you're done
- * with it.
- *
- * This function always succeeds. (If an error occurs, the program
- * is aborted.
- */
-cl_kernel kernel_from_string(cl_context ctx, 
-    char const *knl, char const *knl_name, char const *options);
-
-/* Print information about a device, found from either the
- * queue or the device_id.
- */
-void print_device_info(cl_device_id device);
-void get_device_name_from_queue(cl_command_queue queue, char * buf, int bufsize);
-void print_device_info_from_queue(cl_command_queue queue);
 
 #define SET_1_KERNEL_ARG(knl, arg0) \
   CALL_CL_GUARDED(clSetKernelArg, (knl, 0, sizeof(arg0), &arg0));
@@ -255,4 +176,26 @@ void print_device_info_from_queue(cl_command_queue queue);
   CALL_CL_GUARDED(clSetKernelArg, (knl, 10, sizeof(arg10), &arg10)); \
   CALL_CL_GUARDED(clSetKernelArg, (knl, 11, sizeof(arg11), &arg11));
 
-#endif
+#define CHOOSE_INTERACTIVELY "INTERACTIVE"
+class OpenCLUtil 
+{
+// Methods
+  public:
+    static const char *cl_error_to_str(cl_int e);
+    static void print_platforms_devices();
+
+    static void create_context_on(const char *plat_name, const char*dev_name, cl_uint idx, cl_context *ctx, cl_command_queue *queue, int enable_profiling);
+
+    static char *read_a_line();
+    static char *read_file(const char *filename);
+
+    static cl_kernel kernel_from_string(cl_context ctx, char const *knl, char const *knl_name, char const *options);
+
+    static void print_device_info(cl_device_id device);
+    static void get_device_name_from_queue(cl_command_queue queue, char * buf, int bufsize);
+    static void print_device_info_from_queue(cl_command_queue queue);
+
+
+};
+
+#endif //OPENCL_UTIL_H

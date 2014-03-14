@@ -3,20 +3,21 @@
 
 /// IF YOU PLAN ON RUNNING THIS ON THE CPU CHANGE TO 1
 #if __APPLE__
-#if USE_OPENCL_ON_CPU
-#define WGSIZE 1
+  #if USE_OPENCL_ON_CPU
+   #define WGSIZE 1
+  #else
+   #define WGSIZE 256
+  #endif
 #else
-#define WGSIZE 256
-#endif
-#else
-#define WGSIZE 1
+  #define WGSIZE 1
 #endif
 
 #define BLOCK_SIZE 8
 //Has to be BLOCK_SIZE + 2
 #define BLOCK_SIZE_WITH_PAD 10
 
-#include "cl-helper.h"
+//#include "cl-helper.h"
+#include "OpenCLUtil.h"
 #include <math.h>
 
 typedef struct CLData {
@@ -89,10 +90,10 @@ void init_cl_data(CLData * clData, float h, int n, int dn, int nx, int ny, int n
 cl_kernel load_single_cl_kernel(CLData *clData, const char* filename, const char* kernel_name)
 {
 
-  char *knl_text = read_file(filename);
+  char *knl_text = OpenCLUtil::read_file(filename);
   char options[256];
   sprintf(options,"-DNX=%u -DNY=%u -DNZ=%u -DWGSIZE=%u -DBLOCK_SIZE=%u -DBLOCK_SIZE_WITH_PAD=%u",NX,NY,NZ,WGSIZE,BLOCK_SIZE,BLOCK_SIZE_WITH_PAD);
-  cl_kernel kernel = kernel_from_string( clData->ctx, knl_text, kernel_name, options);
+  cl_kernel kernel = OpenCLUtil::kernel_from_string( clData->ctx, knl_text, kernel_name, options);
   free(knl_text);
   return kernel;
 }
@@ -302,7 +303,7 @@ void run_cl_advect_density(CLData * clData, float dt)
                     );
     
     size_t ldim[] = { WGSIZE };
-    size_t gdim[] = { clData->n};
+    size_t gdim[] = { (size_t)clData->n};
     
     CALL_CL_GUARDED(clEnqueueNDRangeKernel,
                     (clData->queue, clData->advect_density_kernel,
@@ -330,7 +331,7 @@ void run_cl_advect_velocity(CLData * clData, float dt)
                     );
   
   size_t ldim[] = { WGSIZE };
-  size_t gdim[] = { clData->n};
+  size_t gdim[] = { (size_t)clData->n};
   
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
                   (clData->queue, clData->advect_velocity_kernel,
@@ -355,7 +356,7 @@ void run_cl_vorticity_confinement(CLData * clData, float dt, float e)
                     );
   
   size_t ldim[] = { WGSIZE };
-  size_t gdim[] = { clData->n};
+  size_t gdim[] = { (size_t)clData->n};
   
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
                   (clData->queue, clData->vorticity_confinement_kernel,
@@ -376,7 +377,7 @@ void run_cl_calculate_divergence(CLData * clData, float dt)
                      dt);
   
   size_t ldim[] = { WGSIZE };
-  size_t gdim[] = { clData->n};
+  size_t gdim[] = { (size_t)clData->n};
   
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
                   (clData->queue, clData->calculate_divergence_kernel,
@@ -394,7 +395,7 @@ void run_laplacian_mtx_vec_mult(CLData * clData)
                     clData->dims);
   
   size_t ldim[] = { WGSIZE };
-  size_t gdim[] = { clData->n};
+  size_t gdim[] = { (size_t)clData->n};
   
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
                   (clData->queue, clData->laplacian_mtx_vec_mult_kernel,
@@ -479,7 +480,7 @@ void mtx_times_vec_for_laplacian(float *out, float* x, int n);
                     dt);
   
   size_t ldim[] = { WGSIZE };
-  size_t gdim[] = { clData->n};
+  size_t gdim[] = { (size_t)clData->n};
   
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
                   (clData->queue, clData->pressure_solve_kernel,
@@ -505,7 +506,7 @@ void run_cl_pressure_apply(CLData * clData, float dt)
                     dt);
   
   size_t ldim[] = { WGSIZE };
-  size_t gdim[] = { clData->n};
+  size_t gdim[] = { (size_t)clData->n};
   
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
                   (clData->queue, clData->pressure_apply_kernel,
@@ -518,7 +519,7 @@ void run_cl_zero_pressure(CLData * clData)
   SET_1_KERNEL_ARG( clData->zero_pressure_kernel, clData->buf_pressure);
   
   size_t ldim[] = { WGSIZE };
-  size_t gdim[] = { clData->n};
+  size_t gdim[] = { (size_t)clData->n};
   
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
                   (clData->queue, clData->zero_pressure_kernel,

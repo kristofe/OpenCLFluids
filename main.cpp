@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 
 
 
@@ -24,7 +25,8 @@
 #endif
 #include "GLFW/glfw3.h" // - lib is in /usr/local/lib/libglfw3.a
 
-#include "cl-helper.h"
+#include "OpenCLUtil.h"
+//#include "cl-helper.h"
 #include "timing.h"
 
 
@@ -73,13 +75,13 @@ int dims[3] = { NX, NY, NZ};
 void init_opencl()
 {
 #if !__APPLE__
-   create_context_on(CHOOSE_INTERACTIVELY, CHOOSE_INTERACTIVELY, 0, &clData.ctx, &clData.queue, 0);
+  OpenCLUtil::create_context_on(CHOOSE_INTERACTIVELY, CHOOSE_INTERACTIVELY, 0, &clData.ctx, &clData.queue, 0);
 #else
 #if USE_OPENCL_ON_CPU
-  create_context_on("Apple", "Intel", 0, &clData.ctx, &clData.queue, 0);
+  OpenCLUtil::create_context_on("Apple", "Intel", 0, &clData.ctx, &clData.queue, 0);
 #else
-  create_context_on("Apple", "Intel", 0, &clData.ctx, &clData.queue, 0);
-  //create_context_on("Apple", "GeForce", 0, &clData.ctx, &clData.queue, 0);
+  OpenCLUtil::create_context_on("Apple", "Intel", 0, &clData.ctx, &clData.queue, 0);
+  //OpenCLUtil::create_context_on("Apple", "GeForce", 0, &clData.ctx, &clData.queue, 0);
 #endif
 #endif
   
@@ -213,7 +215,7 @@ static int allocate_data ( void )
 
 static void create_opengl_textures()
 {
-  glGentTextures(1,&gl_tex3d_dens);
+  glGenTextures(1,&gl_tex3d_dens);
   glBindTexture(GL_TEXTURE_3D, gl_tex3d_dens);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -226,7 +228,7 @@ static void create_opengl_textures()
   glTexImage3D(GL_TEXTURE_3D, 0, GL_R, NX, NY, NZ, 0, GL_RED, GL_FLOAT, g_dens);
   
   
-  glGentTextures(1,&gl_tex3d_dens_prev);
+  glGenTextures(1,&gl_tex3d_dens_prev);
 }
 
 
@@ -440,21 +442,6 @@ static void key_func ( unsigned char key)
 	}
 }
 
-static void mouse_func ( int button, int state, int x, int y )
-{
-	omx = mx = x;
-	omy = my = y;
-
-	mouse_down[button] = state == GLUT_DOWN;
-}
-
-static void motion_func ( int x, int y )
-{
-	mx = x;
-	my = y;
-}
-
-
 static void simulate ( void )
 {
 	//if(step)
@@ -618,8 +605,8 @@ void runTimings(){
   allocate_cl_buffers(&clData);
   
  
-  print_device_info_from_queue(clData.queue);
-  get_device_name_from_queue(clData.queue, device_name, 256);
+  OpenCLUtil::print_device_info_from_queue(clData.queue);
+  OpenCLUtil::get_device_name_from_queue(clData.queue, device_name, 256);
   
   transfer_buffers_to_gpu();
   
@@ -1056,7 +1043,7 @@ void init ( )
 
 
 
-//print_platforms_devices();
+//OpenCLUtil::print_platforms_devices();
 //  run_opencl_test();
   
 //	run_tests();

@@ -2,13 +2,15 @@ cmake_minimum_required  (VERSION 2.6)
 project(OpenCLFluids)
 
 set(SOURCES
-   main.c
-   cl-helper.c
+   main.cpp
+#cl-helper.c
+   OpenCLUtil.cpp
 )
 
 set(HEADERS
   cl_solver.h
-  cl-helper.h
+#  cl-helper.h
+  OpenCLUtil.h
   second_order_solver.h
   timing.h
 )

@@ -30,16 +30,16 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = "/Applications/CMake 2.8-12.app/Contents/bin/cmake"
+CMAKE_COMMAND = /opt/local/bin/cmake
 
 # The command to remove a file.
-RM = "/Applications/CMake 2.8-12.app/Contents/bin/cmake" -E remove -f
+RM = /opt/local/bin/cmake -E remove -f
 
 # Escaping for special characters.
 EQUALS = =
 
 # The program to use to edit the cache.
-CMAKE_EDIT_COMMAND = "/Applications/CMake 2.8-12.app/Contents/bin/ccmake"
+CMAKE_EDIT_COMMAND = /opt/local/bin/ccmake
 
 # The top-level source directory on which CMake was run.
 CMAKE_SOURCE_DIR = /Users/kristofe/Documents/Projects/OpenCLFluids
@@ -53,7 +53,7 @@ CMAKE_BINARY_DIR = /Users/kristofe/Documents/Projects/OpenCLFluids
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
-	"/Applications/CMake 2.8-12.app/Contents/bin/ccmake" -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	/opt/local/bin/ccmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : edit_cache
 
 # Special rule for the target edit_cache
@@ -63,7 +63,7 @@ edit_cache/fast: edit_cache
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	"/Applications/CMake 2.8-12.app/Contents/bin/cmake" -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	/opt/local/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : rebuild_cache
 
 # Special rule for the target rebuild_cache
@@ -114,53 +114,53 @@ fluidsim/fast:
 	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/build
 .PHONY : fluidsim/fast
 
-cl-helper.o: cl-helper.c.o
-.PHONY : cl-helper.o
+OpenCLUtil.o: OpenCLUtil.cpp.o
+.PHONY : OpenCLUtil.o
 
 # target to build an object file
-cl-helper.c.o:
-	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/cl-helper.c.o
-.PHONY : cl-helper.c.o
+OpenCLUtil.cpp.o:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/OpenCLUtil.cpp.o
+.PHONY : OpenCLUtil.cpp.o
 
-cl-helper.i: cl-helper.c.i
-.PHONY : cl-helper.i
+OpenCLUtil.i: OpenCLUtil.cpp.i
+.PHONY : OpenCLUtil.i
 
 # target to preprocess a source file
-cl-helper.c.i:
-	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/cl-helper.c.i
-.PHONY : cl-helper.c.i
+OpenCLUtil.cpp.i:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/OpenCLUtil.cpp.i
+.PHONY : OpenCLUtil.cpp.i
 
-cl-helper.s: cl-helper.c.s
-.PHONY : cl-helper.s
+OpenCLUtil.s: OpenCLUtil.cpp.s
+.PHONY : OpenCLUtil.s
 
 # target to generate assembly for a file
-cl-helper.c.s:
-	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/cl-helper.c.s
-.PHONY : cl-helper.c.s
+OpenCLUtil.cpp.s:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/OpenCLUtil.cpp.s
+.PHONY : OpenCLUtil.cpp.s
 
-main.o: main.c.o
+main.o: main.cpp.o
 .PHONY : main.o
 
 # target to build an object file
-main.c.o:
-	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/main.c.o
-.PHONY : main.c.o
+main.cpp.o:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/main.cpp.o
+.PHONY : main.cpp.o
 
-main.i: main.c.i
+main.i: main.cpp.i
 .PHONY : main.i
 
 # target to preprocess a source file
-main.c.i:
-	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/main.c.i
-.PHONY : main.c.i
+main.cpp.i:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/main.cpp.i
+.PHONY : main.cpp.i
 
-main.s: main.c.s
+main.s: main.cpp.s
 .PHONY : main.s
 
 # target to generate assembly for a file
-main.c.s:
-	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/main.c.s
-.PHONY : main.c.s
+main.cpp.s:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/main.cpp.s
+.PHONY : main.cpp.s
 
 # Help Target
 help:
@@ -171,9 +171,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... fluidsim"
 	@echo "... rebuild_cache"
-	@echo "... cl-helper.o"
-	@echo "... cl-helper.i"
-	@echo "... cl-helper.s"
+	@echo "... OpenCLUtil.o"
+	@echo "... OpenCLUtil.i"
+	@echo "... OpenCLUtil.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
