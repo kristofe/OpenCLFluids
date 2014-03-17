@@ -730,3 +730,22 @@ void OpenCLUtil::print_device_info_from_queue(cl_command_queue queue)
   print_device_info(dev);
 }
 
+void OpenCLUtil::setKernelArg(size_t size, const void * arg)
+{
+  cl_int status_code = clSetKernelArg(_currentKernel, _currentArgIndex++, size, arg);
+  if(status_code){
+    fprintf(stderr,"Failed to set kernel argument: %d\n",_currentArgIndex - 1);
+    abort();
+  }
+}
+
+void OpenCLUtil::setKernelArg(int idx, size_t size, const void * arg)
+{
+  cl_int status_code = clSetKernelArg(_currentKernel, idx, size, arg);
+  if(status_code){
+    fprintf(stderr,"Failed to set kernel argument: %d\n",idx);
+    abort();
+  }
+}
+
+

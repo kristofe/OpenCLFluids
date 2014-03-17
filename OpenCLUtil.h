@@ -74,112 +74,11 @@
     abort(); \
   }
 
-#define SET_1_KERNEL_ARG(knl, arg0) \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 0, sizeof(arg0), &arg0));
-
-#define SET_2_KERNEL_ARGS(knl, arg0, arg1) \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 0, sizeof(arg0), &arg0)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 1, sizeof(arg1), &arg1));
-
-#define SET_3_KERNEL_ARGS(knl, arg0, arg1, arg2) \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 0, sizeof(arg0), &arg0)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 1, sizeof(arg1), &arg1)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 2, sizeof(arg2), &arg2));
-
-#define SET_4_KERNEL_ARGS(knl, arg0, arg1, arg2, arg3) \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 0, sizeof(arg0), &arg0)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 1, sizeof(arg1), &arg1)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 2, sizeof(arg2), &arg2)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 3, sizeof(arg3), &arg3));
-
-#define SET_5_KERNEL_ARGS(knl, arg0, arg1, arg2, arg3, arg4) \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 0, sizeof(arg0), &arg0)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 1, sizeof(arg1), &arg1)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 2, sizeof(arg2), &arg2)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 3, sizeof(arg3), &arg3)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 4, sizeof(arg4), &arg4));
-
-#define SET_6_KERNEL_ARGS(knl, arg0, arg1, arg2, arg3, arg4, arg5) \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 0, sizeof(arg0), &arg0)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 1, sizeof(arg1), &arg1)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 2, sizeof(arg2), &arg2)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 3, sizeof(arg3), &arg3)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 4, sizeof(arg4), &arg4)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 5, sizeof(arg5), &arg5));
-
-#define SET_7_KERNEL_ARGS(knl, arg0, arg1, arg2, arg3, arg4, arg5, arg6) \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 0, sizeof(arg0), &arg0)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 1, sizeof(arg1), &arg1)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 2, sizeof(arg2), &arg2)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 3, sizeof(arg3), &arg3)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 4, sizeof(arg4), &arg4)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 5, sizeof(arg5), &arg5)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 6, sizeof(arg6), &arg6));
-
-#define SET_8_KERNEL_ARGS(knl, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7) \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 0, sizeof(arg0), &arg0)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 1, sizeof(arg1), &arg1)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 2, sizeof(arg2), &arg2)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 3, sizeof(arg3), &arg3)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 4, sizeof(arg4), &arg4)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 5, sizeof(arg5), &arg5)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 6, sizeof(arg6), &arg6)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 7, sizeof(arg7), &arg7));
-
-#define SET_9_KERNEL_ARGS(knl, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 0, sizeof(arg0), &arg0)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 1, sizeof(arg1), &arg1)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 2, sizeof(arg2), &arg2)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 3, sizeof(arg3), &arg3)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 4, sizeof(arg4), &arg4)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 5, sizeof(arg5), &arg5)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 6, sizeof(arg6), &arg6)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 7, sizeof(arg7), &arg7)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 8, sizeof(arg8), &arg8));
-
-#define SET_10_KERNEL_ARGS(knl, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 0, sizeof(arg0), &arg0)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 1, sizeof(arg1), &arg1)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 2, sizeof(arg2), &arg2)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 3, sizeof(arg3), &arg3)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 4, sizeof(arg4), &arg4)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 5, sizeof(arg5), &arg5)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 6, sizeof(arg6), &arg6)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 7, sizeof(arg7), &arg7)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 8, sizeof(arg8), &arg8)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 9, sizeof(arg9), &arg9));
-
-#define SET_11_KERNEL_ARGS(knl, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10) \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 0, sizeof(arg0), &arg0)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 1, sizeof(arg1), &arg1)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 2, sizeof(arg2), &arg2)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 3, sizeof(arg3), &arg3)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 4, sizeof(arg4), &arg4)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 5, sizeof(arg5), &arg5)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 6, sizeof(arg6), &arg6)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 7, sizeof(arg7), &arg7)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 8, sizeof(arg8), &arg8)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 9, sizeof(arg9), &arg9)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 10, sizeof(arg10), &arg10));
-
-#define SET_12_KERNEL_ARGS(knl, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11) \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 0, sizeof(arg0), &arg0)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 1, sizeof(arg1), &arg1)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 2, sizeof(arg2), &arg2)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 3, sizeof(arg3), &arg3)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 4, sizeof(arg4), &arg4)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 5, sizeof(arg5), &arg5)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 6, sizeof(arg6), &arg6)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 7, sizeof(arg7), &arg7)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 8, sizeof(arg8), &arg8)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 9, sizeof(arg9), &arg9)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 10, sizeof(arg10), &arg10)); \
-  CALL_CL_GUARDED(clSetKernelArg, (knl, 11, sizeof(arg11), &arg11));
-
 #define CHOOSE_INTERACTIVELY "INTERACTIVE"
 class OpenCLUtil 
 {
-// Methods
+
+// static methods
   public:
     static const char *cl_error_to_str(cl_int e);
     static void print_platforms_devices();
@@ -194,6 +93,33 @@ class OpenCLUtil
     static void print_device_info(cl_device_id device);
     static void get_device_name_from_queue(cl_command_queue queue, char * buf, int bufsize);
     static void print_device_info_from_queue(cl_command_queue queue);
+
+    void set_kernel_arg(cl_kernel krnl, int index, size_t size, const void * arg);
+
+//instance methods
+
+  public:
+    OpenCLUtil():_currentKernel(NULL), _currentArgIndex(0){};
+
+    void setCurrentKernel(cl_kernel krnl) 
+    { 
+      _currentKernel = krnl; 
+    };
+
+    void setCurrentArgIndex(int idx)
+    {
+      _currentArgIndex = idx;
+    };
+
+    void setKernelArg(size_t size, const void * arg);
+    void setKernelArg(int idx, size_t size, const void * arg);
+      
+
+
+  protected:
+
+    cl_kernel _currentKernel;
+    int       _currentArgIndex;
 
 
 };

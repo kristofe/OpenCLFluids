@@ -287,20 +287,20 @@ void cleanup_cl(CLData *clData) {
 
 void run_cl_advect_density(CLData * clData, float dt)
 {
-   SET_8_KERNEL_ARGS(
-                 clData->advect_density_kernel,
-                 dt,
-                 clData->dims,
-                 clData->h,
-                 clData->buf_dens,
-                 clData->buf_dens_prev,
-                 clData->buf_u,
-                 clData->buf_v,
-                 clData->buf_w
-//                 clData->buf_debug_data1,
-//                 clData->buf_debug_data2,
-//                 clData->buf_debug_data3
-                    );
+   OpenCLUtil cl;
+   cl.setCurrentKernel(clData->advect_density_kernel);
+   cl.setKernelArg( sizeof(dt), &dt);
+   cl.setKernelArg( sizeof(clData->dims), &clData->dims);
+   cl.setKernelArg( sizeof(clData->h), &clData->h);
+   cl.setKernelArg( sizeof(clData->buf_dens), &clData->buf_dens);
+   cl.setKernelArg( sizeof(clData->buf_dens_prev), &clData->buf_dens_prev);
+   cl.setKernelArg( sizeof(clData->buf_u), &clData->buf_u);
+   cl.setKernelArg( sizeof(clData->buf_v), &clData->buf_v);
+   cl.setKernelArg( sizeof(clData->buf_w), &clData->buf_w);
+
+   //cl.setKernelArg( sizeof(clData->buf_debug_data1), &clData->buf_debug_data1);
+   //cl.setKernelArg( sizeof(clData->buf_debug_data1), &clData->buf_debug_data1);
+   //cl.setKernelArg( sizeof(clData->buf_debug_data1), &clData->buf_debug_data1);
     
     size_t ldim[] = { WGSIZE };
     size_t gdim[] = { (size_t)clData->n};
@@ -314,21 +314,20 @@ void run_cl_advect_density(CLData * clData, float dt)
 
 void run_cl_advect_velocity(CLData * clData, float dt)
 {
-  SET_9_KERNEL_ARGS(
-                     clData->advect_velocity_kernel,
-                     dt,
-                     clData->dims,
-                     clData->h,
-                     clData->buf_u,
-                     clData->buf_v,
-                     clData->buf_w,
-                     clData->buf_u_prev,
-                     clData->buf_v_prev,
-                     clData->buf_w_prev
-//                     clData->buf_debug_data1,
-//                     clData->buf_debug_data2,
-//                     clData->buf_debug_data3
-                    );
+   OpenCLUtil cl;
+   cl.setCurrentKernel(clData->advect_velocity_kernel);
+   cl.setKernelArg( sizeof(dt), &dt);
+   cl.setKernelArg( sizeof(clData->dims), &clData->dims);
+   cl.setKernelArg( sizeof(clData->h), &clData->h);
+   cl.setKernelArg( sizeof(clData->buf_u), &clData->buf_u);
+   cl.setKernelArg( sizeof(clData->buf_v), &clData->buf_v);
+   cl.setKernelArg( sizeof(clData->buf_w), &clData->buf_w);
+   cl.setKernelArg( sizeof(clData->buf_u_prev), &clData->buf_u_prev);
+   cl.setKernelArg( sizeof(clData->buf_v_prev), &clData->buf_v_prev);
+   cl.setKernelArg( sizeof(clData->buf_w_prev), &clData->buf_w_prev);
+   //cl.setKernelArg( sizeof(clData->buf_debug_data1), &clData->buf_debug_data1);
+   //cl.setKernelArg( sizeof(clData->buf_debug_data1), &clData->buf_debug_data1);
+   //cl.setKernelArg( sizeof(clData->buf_debug_data1), &clData->buf_debug_data1);
   
   size_t ldim[] = { WGSIZE };
   size_t gdim[] = { (size_t)clData->n};
@@ -342,18 +341,17 @@ void run_cl_advect_velocity(CLData * clData, float dt)
 
 void run_cl_vorticity_confinement(CLData * clData, float dt, float e)
 {
-  SET_9_KERNEL_ARGS(
-                    clData->vorticity_confinement_kernel,
-                    clData->buf_u,
-                    clData->buf_v,
-                    clData->buf_w,
-                    clData->buf_u_prev,
-                    clData->buf_v_prev,
-                    clData->buf_w_prev,
-                    clData->dims,
-                    dt,
-                    e
-                    );
+   OpenCLUtil cl;
+   cl.setCurrentKernel(clData->vorticity_confinement_kernel);
+   cl.setKernelArg( sizeof(clData->buf_u), &clData->buf_u);
+   cl.setKernelArg( sizeof(clData->buf_v), &clData->buf_v);
+   cl.setKernelArg( sizeof(clData->buf_w), &clData->buf_w);
+   cl.setKernelArg( sizeof(clData->buf_u_prev), &clData->buf_u_prev);
+   cl.setKernelArg( sizeof(clData->buf_v_prev), &clData->buf_v_prev);
+   cl.setKernelArg( sizeof(clData->buf_w_prev), &clData->buf_w_prev);
+   cl.setKernelArg( sizeof(clData->dims), &clData->dims);
+   cl.setKernelArg( sizeof(dt), &dt);
+   cl.setKernelArg( sizeof(e), &e);
   
   size_t ldim[] = { WGSIZE };
   size_t gdim[] = { (size_t)clData->n};
@@ -367,15 +365,16 @@ void run_cl_vorticity_confinement(CLData * clData, float dt, float e)
 
 void run_cl_calculate_divergence(CLData * clData, float dt)
 {
-  SET_6_KERNEL_ARGS(
-                     clData->calculate_divergence_kernel,
-                     clData->buf_divergence,
-                     clData->buf_u,
-                     clData->buf_v,
-                     clData->buf_w,
-                     clData->dims,
-                     dt);
+   OpenCLUtil cl;
+   cl.setCurrentKernel(clData->calculate_divergence_kernel);
+   cl.setKernelArg( sizeof(clData->buf_divergence), &clData->buf_divergence);
+   cl.setKernelArg( sizeof(clData->buf_u), &clData->buf_u);
+   cl.setKernelArg( sizeof(clData->buf_v), &clData->buf_v);
+   cl.setKernelArg( sizeof(clData->buf_w), &clData->buf_w);
+   cl.setKernelArg( sizeof(clData->dims), &clData->dims);
+   cl.setKernelArg( sizeof(dt), &dt);
   
+ 
   size_t ldim[] = { WGSIZE };
   size_t gdim[] = { (size_t)clData->n};
   
@@ -388,12 +387,13 @@ void run_cl_calculate_divergence(CLData * clData, float dt)
 
 void run_laplacian_mtx_vec_mult(CLData * clData)
 {
-  SET_3_KERNEL_ARGS(
-                    clData->laplacian_mtx_vec_mult_kernel,
-                    clData->buf_cg_q,
-                    clData->buf_cg_d,
-                    clData->dims);
+   OpenCLUtil cl;
+   cl.setCurrentKernel(clData->laplacian_mtx_vec_mult_kernel);
+   cl.setKernelArg( sizeof(clData->buf_cg_q), &clData->buf_cg_q);
+   cl.setKernelArg( sizeof(clData->buf_cg_d), &clData->buf_cg_d);
+   cl.setKernelArg( sizeof(clData->dims), &clData->dims);
   
+ 
   size_t ldim[] = { WGSIZE };
   size_t gdim[] = { (size_t)clData->n};
   
@@ -471,14 +471,14 @@ void mtx_times_vec_for_laplacian(float *out, float* x, int n);
 
   void run_cl_pressure_solve(CLData * clData, float dt)
   {
-    SET_5_KERNEL_ARGS(
-                      clData->pressure_solve_kernel,
-                      clData->buf_pressure,
-                      clData->buf_pressure_prev,
-                      clData->buf_divergence,
-                    clData->dims,
-                    dt);
-  
+   OpenCLUtil cl;
+   cl.setCurrentKernel(clData->pressure_solve_kernel);
+   cl.setKernelArg( sizeof(clData->buf_pressure), &clData->buf_pressure);
+   cl.setKernelArg( sizeof(clData->buf_pressure_prev), &clData->buf_pressure_prev);
+   cl.setKernelArg( sizeof(clData->buf_divergence), &clData->buf_divergence);
+   cl.setKernelArg( sizeof(clData->dims), &clData->dims);
+   cl.setKernelArg( sizeof(dt), &dt);
+   
   size_t ldim[] = { WGSIZE };
   size_t gdim[] = { (size_t)clData->n};
   
@@ -496,14 +496,14 @@ void mtx_times_vec_for_laplacian(float *out, float* x, int n);
 
 void run_cl_pressure_apply(CLData * clData, float dt)
 {
-  SET_6_KERNEL_ARGS(
-                    clData->pressure_apply_kernel,
-                    clData->buf_u,
-                    clData->buf_v,
-                    clData->buf_w,
-                    clData->buf_pressure,
-                    clData->dims,
-                    dt);
+   OpenCLUtil cl;
+   cl.setCurrentKernel(clData->pressure_apply_kernel);
+   cl.setKernelArg( sizeof(clData->buf_u), &clData->buf_u);
+   cl.setKernelArg( sizeof(clData->buf_v), &clData->buf_v);
+   cl.setKernelArg( sizeof(clData->buf_w), &clData->buf_w);
+   cl.setKernelArg( sizeof(clData->buf_pressure), &clData->buf_pressure);
+   cl.setKernelArg( sizeof(clData->dims), &clData->dims);
+   cl.setKernelArg( sizeof(dt), &dt);
   
   size_t ldim[] = { WGSIZE };
   size_t gdim[] = { (size_t)clData->n};
@@ -516,7 +516,9 @@ void run_cl_pressure_apply(CLData * clData, float dt)
 }
 void run_cl_zero_pressure(CLData * clData)
 {
-  SET_1_KERNEL_ARG( clData->zero_pressure_kernel, clData->buf_pressure);
+   OpenCLUtil cl;
+   cl.setCurrentKernel(clData->zero_pressure_kernel);
+   cl.setKernelArg(sizeof(clData->buf_pressure), &clData->buf_pressure);
   
   size_t ldim[] = { WGSIZE };
   size_t gdim[] = { (size_t)clData->n};
