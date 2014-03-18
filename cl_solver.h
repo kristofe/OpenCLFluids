@@ -90,10 +90,10 @@ void init_cl_data(CLData * clData, float h, int n, int dn, int nx, int ny, int n
 cl_kernel load_single_cl_kernel(CLData *clData, const char* filename, const char* kernel_name)
 {
 
-  char *knl_text = OpenCLUtil::read_file(filename);
+  char *knl_text = OpenCLUtil::readFile(filename);
   char options[256];
   sprintf(options,"-DNX=%u -DNY=%u -DNZ=%u -DWGSIZE=%u -DBLOCK_SIZE=%u -DBLOCK_SIZE_WITH_PAD=%u",NX,NY,NZ,WGSIZE,BLOCK_SIZE,BLOCK_SIZE_WITH_PAD);
-  cl_kernel kernel = OpenCLUtil::kernel_from_string( clData->ctx, knl_text, kernel_name, options);
+  cl_kernel kernel = OpenCLUtil::kernelFromString( clData->ctx, knl_text, kernel_name, options);
   free(knl_text);
   return kernel;
 }

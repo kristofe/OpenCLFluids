@@ -75,13 +75,13 @@ int dims[3] = { NX, NY, NZ};
 void init_opencl()
 {
 #if !__APPLE__
-  OpenCLUtil::create_context_on(CHOOSE_INTERACTIVELY, CHOOSE_INTERACTIVELY, 0, &clData.ctx, &clData.queue, 0);
+  OpenCLUtil::createContextOn(CHOOSE_INTERACTIVELY, CHOOSE_INTERACTIVELY, 0, &clData.ctx, &clData.queue, 0);
 #else
 #if USE_OPENCL_ON_CPU
-  OpenCLUtil::create_context_on("Apple", "Intel", 0, &clData.ctx, &clData.queue, 0);
+  OpenCLUtil::createContextOn("Apple", "Intel", 0, &clData.ctx, &clData.queue, 0);
 #else
-  OpenCLUtil::create_context_on("Apple", "Intel", 0, &clData.ctx, &clData.queue, 0);
-  //OpenCLUtil::create_context_on("Apple", "GeForce", 0, &clData.ctx, &clData.queue, 0);
+  OpenCLUtil::createContextOn("Apple", "Intel", 0, &clData.ctx, &clData.queue, 0);
+  //OpenCLUtil::createContextOn("Apple", "GeForce", 0, &clData.ctx, &clData.queue, 0);
 #endif
 #endif
   
@@ -605,8 +605,8 @@ void runTimings(){
   allocate_cl_buffers(&clData);
   
  
-  OpenCLUtil::print_device_info_from_queue(clData.queue);
-  OpenCLUtil::get_device_name_from_queue(clData.queue, device_name, 256);
+  OpenCLUtil::printDeviceInfoFromQueue(clData.queue);
+  OpenCLUtil::getDeviceNameFromQueue(clData.queue, device_name, 256);
   
   transfer_buffers_to_gpu();
   

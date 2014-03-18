@@ -83,18 +83,18 @@ class OpenCLUtil
     static const char *errorToString(cl_int e);
     static void printPlatformDevices();
 
-    static void create_context_on(const char *plat_name, const char*dev_name, cl_uint idx, cl_context *ctx, cl_command_queue *queue, int enable_profiling);
+    static void createContextOn(const char *plat_name, const char*dev_name, cl_uint idx, cl_context *ctx, cl_command_queue *queue, int enable_profiling);
 
-    static char *read_a_line();
-    static char *read_file(const char *filename);
+    static char *readALine();
+    static char *readFile(const char *filename);
 
-    static cl_kernel kernel_from_string(cl_context ctx, char const *knl, char const *knl_name, char const *options);
+    static cl_kernel kernelFromString(cl_context ctx, char const *knl, char const *knl_name, char const *options);
 
-    static void print_device_info(cl_device_id device);
-    static void get_device_name_from_queue(cl_command_queue queue, char * buf, int bufsize);
-    static void print_device_info_from_queue(cl_command_queue queue);
+    static void printDeviceInfo(cl_device_id device);
+    static void getDeviceNameFromQueue(cl_command_queue queue, char * buf, int bufsize);
+    static void printDeviceInfoFromQueue(cl_command_queue queue);
 
-    void set_kernel_arg(cl_kernel krnl, int index, size_t size, const void * arg);
+    void setKernelArg(cl_kernel krnl, int index, size_t size, const void * arg);
 
 //instance methods
 

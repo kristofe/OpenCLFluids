@@ -129,7 +129,7 @@ void OpenCLUtil::printPlatformDevices()
 
 
 
-char *OpenCLUtil::read_a_line(void)
+char *OpenCLUtil::readALine(void)
 {
   char * line = (char *) malloc(MAX_NAME_LEN), * linep = line;
   size_t lenmax = MAX_NAME_LEN, len = lenmax;
@@ -170,7 +170,7 @@ char *OpenCLUtil::read_a_line(void)
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
-void OpenCLUtil::create_context_on(const char *plat_name, const char*dev_name, cl_uint idx,
+void OpenCLUtil::createContextOn(const char *plat_name, const char*dev_name, cl_uint idx,
     cl_context *ctx, cl_command_queue *queue, int enable_profiling)
 {
   char dev_sel_buf[MAX_NAME_LEN];
@@ -204,7 +204,7 @@ void OpenCLUtil::create_context_on(const char *plat_name, const char*dev_name, c
     printf("Enter choice: ");
     fflush(stdout);
 
-    char *sel = read_a_line();
+    char *sel = readALine();
     if (!sel)
     {
       fprintf(stderr, "error reading line from stdin");
@@ -260,7 +260,7 @@ void OpenCLUtil::create_context_on(const char *plat_name, const char*dev_name, c
         printf("Enter choice: ");
         fflush(stdout);
 
-        char *sel = read_a_line();
+        char *sel = readALine();
         if (!sel)
         {
           fprintf(stderr, "error reading line from stdin");
@@ -375,33 +375,33 @@ void OpenCLUtil::create_context_on(const char *plat_name, const char*dev_name, c
 
   free(platforms);
 
-  fputs("create_context_on: specified device not found.\n", stderr);
+  fputs("createContextOn: specified device not found.\n", stderr);
   abort();
 }
 
 
 
 
-char * OpenCLUtil::read_file(const char *filename)
+char * OpenCLUtil::readFile(const char *filename)
 {
   FILE *f = fopen(filename, "r");
-  CHECK_SYS_ERROR(!f, "read_file: opening file");
+  CHECK_SYS_ERROR(!f, "readFile: opening file");
 
   // figure out file size
-  CHECK_SYS_ERROR(fseek(f, 0, SEEK_END) < 0, "read_file: seeking to end");
+  CHECK_SYS_ERROR(fseek(f, 0, SEEK_END) < 0, "readFile: seeking to end");
   size_t size = ftell(f);
 
   CHECK_SYS_ERROR(fseek(f, 0, SEEK_SET) != 0,
-      "read_file: seeking to start");
+      "readFile: seeking to start");
 
   // allocate memory, slurp in entire file
   char *result = (char *) malloc(size+1);
-  CHECK_SYS_ERROR(!result, "read_file: allocating file contents");
+  CHECK_SYS_ERROR(!result, "readFile: allocating file contents");
   CHECK_SYS_ERROR(fread(result, 1, size, f) < size,
-      "read_file: reading file contents");
+      "readFile: reading file contents");
 
   // close, return
-  CHECK_SYS_ERROR(fclose(f), "read_file: closing file");
+  CHECK_SYS_ERROR(fclose(f), "readFile: closing file");
   result[size] = '\0';
 
   return result;
@@ -410,7 +410,7 @@ char * OpenCLUtil::read_file(const char *filename)
 
 
 
-cl_kernel OpenCLUtil::kernel_from_string(cl_context ctx,
+cl_kernel OpenCLUtil::kernelFromString(cl_context ctx,
     char const *knl, char const *knl_name, char const *options)
 {
   // create an OpenCL program (may have multiple kernels)
@@ -436,7 +436,7 @@ cl_kernel OpenCLUtil::kernel_from_string(cl_context ctx,
           0, NULL, &log_size));
 
     char *log = (char *) malloc(log_size);
-    CHECK_SYS_ERROR(!log, "kernel_from_string: allocate log");
+    CHECK_SYS_ERROR(!log, "kernelFromString: allocate log");
 
     char devname[MAX_NAME_LEN];
     CALL_CL_GUARDED(clGetDeviceInfo, (dev, CL_DEVICE_NAME,
@@ -463,7 +463,7 @@ cl_kernel OpenCLUtil::kernel_from_string(cl_context ctx,
 
 
 
-void OpenCLUtil::print_device_info(cl_device_id device)
+void OpenCLUtil::printDeviceInfo(cl_device_id device)
 {
   // adapted from http://graphics.stanford.edu/~yoel/notes/clInfo.c
 
@@ -711,7 +711,7 @@ void OpenCLUtil::print_device_info(cl_device_id device)
   printf("---------------------------------------------------------------------\n");
 }
 
-void OpenCLUtil::get_device_name_from_queue(cl_command_queue queue, char * buf, int bufsize)
+void OpenCLUtil::getDeviceNameFromQueue(cl_command_queue queue, char * buf, int bufsize)
 {
    cl_device_id dev;
    CALL_CL_GUARDED(clGetCommandQueueInfo,
@@ -721,13 +721,13 @@ void OpenCLUtil::get_device_name_from_queue(cl_command_queue queue, char * buf, 
    
 }
 
-void OpenCLUtil::print_device_info_from_queue(cl_command_queue queue)
+void OpenCLUtil::printDeviceInfoFromQueue(cl_command_queue queue)
 {
   cl_device_id dev;
   CALL_CL_GUARDED(clGetCommandQueueInfo,
       (queue, CL_QUEUE_DEVICE, sizeof dev, &dev, NULL));
 
-  print_device_info(dev);
+  printDeviceInfo(dev);
 }
 
 void OpenCLUtil::setKernelArg(size_t size, const void * arg)
