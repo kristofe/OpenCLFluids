@@ -899,69 +899,6 @@ static void test_opencl_opengl_interop()
   if(OpenCLUtil::doesDeviceSupportOpenGLSharing(clData.clMgr)){
     printf("Device supports OpenGL Sharing!\n");
   }
-
-//  CGLContextObj gl_context = CGLGetCurrentContext();
-////  const char * err = CGLErrorString(kCGLContext);
-//  
-//  CGLShareGroupObj kCGLShareGroup = CGLGetShareGroup(gl_context);
-//  
-//
-//  cl_context_properties properties[] = {
-//    CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE,
-//    (cl_context_properties)kCGLShareGroup, 0
-//  };
-//
-//  cl_context ctx = clCreateContext(properties, 0, 0, 0, 0, &status);
-//  clData.clMgr.setContext(ctx);
-//  CHECK_CL_ERROR(status, "clCreateContext");
-//  
-//  // And now we can ask OpenCL which particular device is being used by
-//  // OpenGL to do the rendering, currently:
-//  cl_device_id renderer;
-//  clGetGLContextInfoAPPLE(clData.clMgr.getContext(), gl_context,
-//                          CL_CGL_DEVICE_FOR_CURRENT_VIRTUAL_SCREEN_APPLE, sizeof(renderer),
-//                          &renderer, NULL);
-//  
-//  cl_uint id_in_use;
-//  clGetDeviceInfo(renderer, CL_DEVICE_VENDOR_ID, sizeof(cl_uint),
-//                  &id_in_use, NULL);
-//  
-//  clData.device = renderer;
-//  
-//  cl_command_queue_properties qprops = 0;
-//  
-//  clData.queue = clCreateCommandQueue(clData.ctx, clData.device, qprops, &status);
-//  CHECK_CL_ERROR(status, "clCreateCommandQueue");
-//  
-  
-//
-//  
-//  
-//  int extensionExists = 0;
-//  
-//  size_t extensionSize;
-//  int ciErrNum = clGetDeviceInfo( clData.device, CL_DEVICE_EXTENSIONS, 0, NULL, &extensionSize );
-//  char* extensions = (char*) malloc( extensionSize);
-//  ciErrNum = clGetDeviceInfo( clData.device, CL_DEVICE_EXTENSIONS, extensionSize, extensions, &extensionSize);
-//  
-//  char * pch;
-//  //printf ("Splitting extensions string \"%s\" into tokens:\n",extensions);
-//  pch = strtok (extensions," ");
-//  while (pch != NULL)
-//  {
-//    printf ("%s\n",pch);
-//    if(strcmp(pch, GL_SHARING_EXTENSION) == 0) {
-//      printf("Device supports gl sharing\n");
-//      extensionExists = 1;
-//      break;
-//    }
-//    pch = strtok (NULL, " ");
-//  }
-//
-//  free(extensions);
-  
-  
-  
 }
 
 void run_opencl_test(){

@@ -19,8 +19,7 @@ void OpenCLManager::createContext(const char *plat_name, const char*dev_name, cl
   OpenCLUtil::createContextOn(plat_name, dev_name, idx, &_context, &_commandQueue, enable_profiling);
 
   //TODO: this should go into create context
-  //CALL_CL_GUARDED(clGetCommandQueueInfo, (_commandQueue, CL_QUEUE_DEVICE, sizeof(_device), &_device, NULL));
-  clGetCommandQueueInfo(_commandQueue, CL_QUEUE_DEVICE, sizeof(_device), &_device, NULL);
+  CALL_CL_GUARDED(clGetCommandQueueInfo, (_commandQueue, CL_QUEUE_DEVICE, sizeof(_device), &_device, NULL));
 
 }
 
