@@ -38,7 +38,7 @@
     fprintf(stderr, \
         "*** '%s' in '%s' on line %d failed with error '%s'.\n", \
         WHAT, __FILE__, __LINE__, \
-        OpenCLUtil::cl_error_to_str(STATUS_CODE)); \
+        OpenCLUtil::errorToString(STATUS_CODE)); \
     abort(); \
   }
 
@@ -80,8 +80,8 @@ class OpenCLUtil
 
 // static methods
   public:
-    static const char *cl_error_to_str(cl_int e);
-    static void print_platforms_devices();
+    static const char *errorToString(cl_int e);
+    static void printPlatformDevices();
 
     static void create_context_on(const char *plat_name, const char*dev_name, cl_uint idx, cl_context *ctx, cl_command_queue *queue, int enable_profiling);
 

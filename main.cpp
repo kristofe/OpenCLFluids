@@ -1043,7 +1043,7 @@ void init ( )
 
 
 
-//OpenCLUtil::print_platforms_devices();
+//OpenCLUtil::printPlatformDevices();
 //  run_opencl_test();
   
 //	run_tests();

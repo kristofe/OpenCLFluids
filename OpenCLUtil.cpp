@@ -8,7 +8,7 @@
 
 
 
-const char * OpenCLUtil::cl_error_to_str(cl_int e)
+const char * OpenCLUtil::errorToString(cl_int e)
 {
   switch (e)
   {
@@ -76,7 +76,7 @@ const char * OpenCLUtil::cl_error_to_str(cl_int e)
   }
 }
 
-void OpenCLUtil::print_platforms_devices()
+void OpenCLUtil::printPlatformDevices()
 {
   // get number of platforms
   cl_uint plat_count;
@@ -551,7 +551,7 @@ void OpenCLUtil::print_device_info(cl_device_id device)
     if (status != CL_SUCCESS)
     {
       printf("Unable to get %s: %s!\n",
-          strProps[ii].name, cl_error_to_str(status));
+          strProps[ii].name, OpenCLUtil::errorToString(status));
       continue;
     }
     if (size > sizeof buf)
@@ -596,7 +596,7 @@ void OpenCLUtil::print_device_info(cl_device_id device)
   else
   {
     printf("Unable to get TYPE: %s!\n",
-        cl_error_to_str(status));
+        OpenCLUtil::errorToString(status));
   }
 
   status = clGetDeviceInfo(device, CL_DEVICE_EXECUTION_CAPABILITIES,
@@ -622,7 +622,7 @@ void OpenCLUtil::print_device_info(cl_device_id device)
   else
   {
     printf("Unable to get EXECUTION_CAPABILITIES: %s!\n",
-        cl_error_to_str(status));
+        OpenCLUtil::errorToString(status));
   }
 
   status = clGetDeviceInfo(device, CL_DEVICE_GLOBAL_MEM_CACHE_TYPE,
@@ -638,7 +638,7 @@ void OpenCLUtil::print_device_info(cl_device_id device)
   else
   {
     printf("Unable to get GLOBAL_MEM_CACHE_TYPE: %s!\n",
-        cl_error_to_str(status));
+        OpenCLUtil::errorToString(status));
   }
 
   status = clGetDeviceInfo(device,
@@ -655,7 +655,7 @@ void OpenCLUtil::print_device_info(cl_device_id device)
   else
   {
     printf("Unable to get CL_DEVICE_LOCAL_MEM_TYPE: %s!\n",
-        cl_error_to_str(status));
+        OpenCLUtil::errorToString(status));
   }
 
   for (ii = 0; hexProps[ii].name != NULL; ii++)
@@ -664,7 +664,7 @@ void OpenCLUtil::print_device_info(cl_device_id device)
     if (status != CL_SUCCESS)
     {
       printf("Unable to get %s: %s!\n",
-          hexProps[ii].name, cl_error_to_str(status));
+          hexProps[ii].name, OpenCLUtil::errorToString(status));
       continue;
     }
     if (size > sizeof val)
@@ -682,7 +682,7 @@ void OpenCLUtil::print_device_info(cl_device_id device)
     if (status != CL_SUCCESS)
     {
       printf("Unable to get %s: %s!\n",
-          longProps[ii].name, cl_error_to_str(status));
+          longProps[ii].name, OpenCLUtil::errorToString(status));
       continue;
     }
     if (size > sizeof val)
