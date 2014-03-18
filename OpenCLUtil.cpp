@@ -1,4 +1,5 @@
 #include "OpenCLUtil.h"
+#include "OpenCLManager.h"
 #include <string.h>
 
 
@@ -749,3 +750,35 @@ void OpenCLUtil::setKernelArg(int idx, size_t size, const void * arg)
 }
 
 
+
+void OpenCLUtil::getDeviceExtensionList(OpenCLManager& clMgr, std::vector<std::string>& strings)
+{
+  size_t extensionSize;
+  int ciErrNum = clGetDeviceInfo( 
+                 clMgr.getDeviceID(), CL_DEVICE_EXTENSIONS, 0, NULL, &extensionSize );
+  char* extensions = (char*) malloc( extensionSize);
+  ciErrNum = clGetDeviceInfo( clMgr.getDeviceID(), CL_DEVICE_EXTENSIONS, extensionSize, extensions, &extensionSize);
+
+  std::istringstream f(extensions);
+  std::string s;
+  while(std::getline(f, s, ' ')){
+    strings.push_back(s);
+  }
+}
+
+bool OpenCLUtil::doesDeviceSupportOpenGLSharing(OpenCLManager& clMgr)
+{
+  bool found = false;
+  std::vector<std::string>  extensions;
+  OpenCLUtil::getDeviceExtensionList(clMgr, extensions);
+  std::vector<std::string>::iterator it = extensions.begin();
+  while(it != extensions.end())
+  {
+    if(it->compare(GL_SHARING_EXTENSION) == 0){
+      found = true;
+      break;
+    }
+    ++it;
+  }
+  return found;
+}

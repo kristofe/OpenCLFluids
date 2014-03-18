@@ -114,6 +114,30 @@ fluidsim/fast:
 	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/build
 .PHONY : fluidsim/fast
 
+OpenCLManager.o: OpenCLManager.cpp.o
+.PHONY : OpenCLManager.o
+
+# target to build an object file
+OpenCLManager.cpp.o:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/OpenCLManager.cpp.o
+.PHONY : OpenCLManager.cpp.o
+
+OpenCLManager.i: OpenCLManager.cpp.i
+.PHONY : OpenCLManager.i
+
+# target to preprocess a source file
+OpenCLManager.cpp.i:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/OpenCLManager.cpp.i
+.PHONY : OpenCLManager.cpp.i
+
+OpenCLManager.s: OpenCLManager.cpp.s
+.PHONY : OpenCLManager.s
+
+# target to generate assembly for a file
+OpenCLManager.cpp.s:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/OpenCLManager.cpp.s
+.PHONY : OpenCLManager.cpp.s
+
 OpenCLUtil.o: OpenCLUtil.cpp.o
 .PHONY : OpenCLUtil.o
 
@@ -171,6 +195,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... fluidsim"
 	@echo "... rebuild_cache"
+	@echo "... OpenCLManager.o"
+	@echo "... OpenCLManager.i"
+	@echo "... OpenCLManager.s"
 	@echo "... OpenCLUtil.o"
 	@echo "... OpenCLUtil.i"
 	@echo "... OpenCLUtil.s"

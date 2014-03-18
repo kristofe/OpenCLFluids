@@ -24,6 +24,8 @@
   void operator=(const TypeName&)
 
 
+
+
 class OpenCLManager 
 {
   public:
@@ -32,13 +34,21 @@ class OpenCLManager
     DISALLOW_COPY_AND_ASSIGN(OpenCLManager);
 
   public:
-    OpenCLManager():_context(NULL), _device(NULL), _commandQueue(NULL){};
+    OpenCLManager();
     ~OpenCLManager();
 
+    void createContext(const char *plat_name, const char* dev_name, cl_uint idx,
+                      int enable_profiling);
+
+    void createContextForOpenGLOSX();
+
+    inline cl_device_id getDeviceID(){ return _device;};
+    inline cl_context getContext(){ return _context;};
+    inline cl_command_queue getQueue(){ return _commandQueue;};
 
 
   protected:
-    cl_device _device;
+    cl_device_id _device;
     cl_context _context;
     cl_command_queue _commandQueue;
 

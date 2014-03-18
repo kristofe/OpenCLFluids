@@ -6,6 +6,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <sstream>
+#include <iostream>
+#include <vector>
+
+
 #ifdef __APPLE__
   #include <OpenGL/gl.h>
   #include <OpenGL/glu.h> 
@@ -17,6 +22,14 @@
 #else
 #include <CL/cl.h>
 #endif
+
+#ifdef __APPLE__
+  #define GL_SHARING_EXTENSION "cl_APPLE_gl_sharing"
+#else
+  #define GL_SHARING_EXTENSION "cl_khr_gl_sharing"
+#endif
+
+class OpenCLManager;
 
 // A macro to disallow the copy constructor and operator= functions
 // This should be used in the private: declarations for a class
@@ -94,8 +107,8 @@ class OpenCLUtil
     static void getDeviceNameFromQueue(cl_command_queue queue, char * buf, int bufsize);
     static void printDeviceInfoFromQueue(cl_command_queue queue);
 
-    void setKernelArg(cl_kernel krnl, int index, size_t size, const void * arg);
-
+    static void getDeviceExtensionList(OpenCLManager& clMgr, std::vector<std::string>& strings);
+    static bool doesDeviceSupportOpenGLSharing(OpenCLManager& clMgr);
 //instance methods
 
   public:

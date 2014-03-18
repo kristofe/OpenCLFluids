@@ -5,12 +5,14 @@ set(SOURCES
    main.cpp
 #cl-helper.c
    OpenCLUtil.cpp
+   OpenCLManager.cpp
 )
 
 set(HEADERS
   cl_solver.h
 #  cl-helper.h
   OpenCLUtil.h
+  OpenCLManager.h
   second_order_solver.h
   timing.h
 )

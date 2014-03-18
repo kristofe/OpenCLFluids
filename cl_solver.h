@@ -18,12 +18,14 @@
 
 //#include "cl-helper.h"
 #include "OpenCLUtil.h"
+#include "OpenCLManager.h"
 #include <math.h>
 
 typedef struct CLData {
-  cl_device_id device;
-  cl_context ctx;
-  cl_command_queue queue;
+  OpenCLManager clMgr;
+  //cl_device_id device;
+  //cl_context ctx;
+  //cl_command_queue queue;
   cl_kernel advect_velocity_kernel;
   cl_kernel advect_density_kernel;
   cl_kernel vorticity_confinement_kernel;
@@ -65,13 +67,15 @@ typedef struct CLData {
   
 } CLData;
 
+/*
 void set_device_id(CLData * clData){
   cl_device_id dev;
   CALL_CL_GUARDED(clGetCommandQueueInfo,
-                  (clData->queue, CL_QUEUE_DEVICE, sizeof dev, &dev, NULL));
+                  (clData->clMgr.getQueue(), CL_QUEUE_DEVICE, sizeof dev, &dev, NULL));
   
   clData->device = dev;
 }
+*/
 
 void init_cl_data(CLData * clData, float h, int n, int dn, int nx, int ny, int nz)
 {
@@ -93,7 +97,8 @@ cl_kernel load_single_cl_kernel(CLData *clData, const char* filename, const char
   char *knl_text = OpenCLUtil::readFile(filename);
   char options[256];
   sprintf(options,"-DNX=%u -DNY=%u -DNZ=%u -DWGSIZE=%u -DBLOCK_SIZE=%u -DBLOCK_SIZE_WITH_PAD=%u",NX,NY,NZ,WGSIZE,BLOCK_SIZE,BLOCK_SIZE_WITH_PAD);
-  cl_kernel kernel = OpenCLUtil::kernelFromString( clData->ctx, knl_text, kernel_name, options);
+  cl_kernel kernel = OpenCLUtil::kernelFromString( clData->clMgr.getContext(), 
+      knl_text, kernel_name, options);
   free(knl_text);
   return kernel;
 }
@@ -133,70 +138,70 @@ void load_cl_kernels(CLData *clData)
 void allocate_cl_buffers(CLData *clData)
 {
  
-  clData->buf_u = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
+  clData->buf_u = clCreateBuffer(clData->clMgr.getContext(), CL_MEM_READ_WRITE,
                                      sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
   
-  clData->buf_v = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
+  clData->buf_v = clCreateBuffer(clData->clMgr.getContext(), CL_MEM_READ_WRITE,
                                      sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
   
-  clData->buf_w = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
+  clData->buf_w = clCreateBuffer(clData->clMgr.getContext(), CL_MEM_READ_WRITE,
                                      sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
 
-  clData->buf_u_prev = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
+  clData->buf_u_prev = clCreateBuffer(clData->clMgr.getContext(), CL_MEM_READ_WRITE,
                                      sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
   
-  clData->buf_v_prev = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
+  clData->buf_v_prev = clCreateBuffer(clData->clMgr.getContext(), CL_MEM_READ_WRITE,
                                      sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
   
-  clData->buf_w_prev = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
+  clData->buf_w_prev = clCreateBuffer(clData->clMgr.getContext(), CL_MEM_READ_WRITE,
                                      sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
 
 
-  clData->buf_dens_prev = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
+  clData->buf_dens_prev = clCreateBuffer(clData->clMgr.getContext(), CL_MEM_READ_WRITE,
                                         sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
   
-  clData->buf_dens = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
+  clData->buf_dens = clCreateBuffer(clData->clMgr.getContext(), CL_MEM_READ_WRITE,
                                    sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
 
    
-  clData->buf_pressure_prev = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
+  clData->buf_pressure_prev = clCreateBuffer(clData->clMgr.getContext(), CL_MEM_READ_WRITE,
                                    sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
 
-  clData->buf_pressure = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
+  clData->buf_pressure = clCreateBuffer(clData->clMgr.getContext(), CL_MEM_READ_WRITE,
                                    sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
    
    
-  clData->buf_divergence = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
+  clData->buf_divergence = clCreateBuffer(clData->clMgr.getContext(), CL_MEM_READ_WRITE,
                                    sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
   
-  clData->buf_cg_q = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
+  clData->buf_cg_q = clCreateBuffer(clData->clMgr.getContext(), CL_MEM_READ_WRITE,
                                    sizeof(float) * clData->n, 0, &clData->status);
   
-  clData->buf_cg_d = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
+  clData->buf_cg_d = clCreateBuffer(clData->clMgr.getContext(), CL_MEM_READ_WRITE,
                                    sizeof(float) * clData->n, 0, &clData->status);
   
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
   
-  clData->buf_debug_data1= clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
+  clData->buf_debug_data1= clCreateBuffer(clData->clMgr.getContext(), CL_MEM_READ_WRITE,
                                          sizeof(float) * clData->dn * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
   
-  clData->buf_debug_data2= clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
+  clData->buf_debug_data2= clCreateBuffer(clData->clMgr.getContext(), CL_MEM_READ_WRITE,
                                          sizeof(float) * clData->dn * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
   
-  clData->buf_debug_data3= clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
+  clData->buf_debug_data3= clCreateBuffer(clData->clMgr.getContext(), CL_MEM_READ_WRITE,
                                          sizeof(float) * clData->dn * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
 }
@@ -210,7 +215,7 @@ void transfer_cl_float_buffer_to_device(
                                         cl_bool blocking)
 {
    CALL_CL_GUARDED(clEnqueueWriteBuffer, ( 
-            clData->queue, 
+            clData->clMgr.getQueue(), 
             buf, 
             blocking, 
             0, 
@@ -228,7 +233,7 @@ void transfer_cl_int_buffer_to_device(
                                        int size, 
                                        cl_bool blocking)
 {
-   CALL_CL_GUARDED(clEnqueueWriteBuffer, ( clData->queue, buf, blocking, 0, size*sizeof(int), memory, 0, NULL, NULL));
+   CALL_CL_GUARDED(clEnqueueWriteBuffer, ( clData->clMgr.getQueue(), buf, blocking, 0, size*sizeof(int), memory, 0, NULL, NULL));
 }
 
 
@@ -240,7 +245,7 @@ void transfer_cl_float_buffer_from_device(
                                           cl_bool blocking)
 {
    CALL_CL_GUARDED(clEnqueueReadBuffer, (
-                                        clData->queue, buf,
+                                        clData->clMgr.getQueue(), buf,
                                          blocking, //blocking
                                         0, //offset
                                         size * sizeof(float), memory,
@@ -275,8 +280,8 @@ void cleanup_cl(CLData *clData) {
   CALL_CL_GUARDED(clReleaseKernel, (clData->laplacian_mtx_vec_mult_kernel));
   CALL_CL_GUARDED(clReleaseKernel, (clData->vector_dot_product_kernel));
   
-  CALL_CL_GUARDED(clReleaseCommandQueue, (clData->queue));
-  CALL_CL_GUARDED(clReleaseContext, (clData->ctx));
+  CALL_CL_GUARDED(clReleaseCommandQueue, (clData->clMgr.getQueue()));
+  CALL_CL_GUARDED(clReleaseContext, (clData->clMgr.getContext()));
   
   
 //  free(clData->debug_data1);
@@ -306,7 +311,7 @@ void run_cl_advect_density(CLData * clData, float dt)
     size_t gdim[] = { (size_t)clData->n};
     
     CALL_CL_GUARDED(clEnqueueNDRangeKernel,
-                    (clData->queue, clData->advect_density_kernel,
+                    (clData->clMgr.getQueue(), clData->advect_density_kernel,
                      /*dimensions*/ 1, NULL, gdim, ldim,
                      0, NULL, NULL));
 
@@ -333,7 +338,7 @@ void run_cl_advect_velocity(CLData * clData, float dt)
   size_t gdim[] = { (size_t)clData->n};
   
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
-                  (clData->queue, clData->advect_velocity_kernel,
+                  (clData->clMgr.getQueue(), clData->advect_velocity_kernel,
                    /*dimensions*/ 1, NULL, gdim, ldim,
                    0, NULL, NULL));
   
@@ -357,7 +362,7 @@ void run_cl_vorticity_confinement(CLData * clData, float dt, float e)
   size_t gdim[] = { (size_t)clData->n};
   
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
-                  (clData->queue, clData->vorticity_confinement_kernel,
+                  (clData->clMgr.getQueue(), clData->vorticity_confinement_kernel,
                    /*dimensions*/ 1, NULL, gdim, ldim,
                    0, NULL, NULL));
   
@@ -379,7 +384,7 @@ void run_cl_calculate_divergence(CLData * clData, float dt)
   size_t gdim[] = { (size_t)clData->n};
   
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
-                  (clData->queue, clData->calculate_divergence_kernel,
+                  (clData->clMgr.getQueue(), clData->calculate_divergence_kernel,
                    /*dimensions*/ 1, NULL, gdim, ldim,
                    0, NULL, NULL));
   
@@ -398,7 +403,7 @@ void run_laplacian_mtx_vec_mult(CLData * clData)
   size_t gdim[] = { (size_t)clData->n};
   
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
-                  (clData->queue, clData->laplacian_mtx_vec_mult_kernel,
+                  (clData->clMgr.getQueue(), clData->laplacian_mtx_vec_mult_kernel,
                    /*dimensions*/ 1, NULL, gdim, ldim,
                    0, NULL, NULL));
   
@@ -483,7 +488,7 @@ void mtx_times_vec_for_laplacian(float *out, float* x, int n);
   size_t gdim[] = { (size_t)clData->n};
   
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
-                  (clData->queue, clData->pressure_solve_kernel,
+                  (clData->clMgr.getQueue(), clData->pressure_solve_kernel,
                    /*dimensions*/ 1, NULL, gdim, ldim,
                    0, NULL, NULL));
   
@@ -509,7 +514,7 @@ void run_cl_pressure_apply(CLData * clData, float dt)
   size_t gdim[] = { (size_t)clData->n};
   
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
-                  (clData->queue, clData->pressure_apply_kernel,
+                  (clData->clMgr.getQueue(), clData->pressure_apply_kernel,
                    /*dimensions*/ 1, NULL, gdim, ldim,
                    0, NULL, NULL));
   
@@ -524,7 +529,7 @@ void run_cl_zero_pressure(CLData * clData)
   size_t gdim[] = { (size_t)clData->n};
   
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
-                  (clData->queue, clData->zero_pressure_kernel,
+                  (clData->clMgr.getQueue(), clData->zero_pressure_kernel,
                    /*dimensions*/ 1, NULL, gdim, ldim,
                    0, NULL, NULL));
   

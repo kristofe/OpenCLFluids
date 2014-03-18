@@ -26,6 +26,7 @@
 #include "GLFW/glfw3.h" // - lib is in /usr/local/lib/libglfw3.a
 
 #include "OpenCLUtil.h"
+#include "OpenCLManager.h"
 //#include "cl-helper.h"
 #include "timing.h"
 
@@ -67,7 +68,6 @@ unsigned int gl_tex3d_dens, gl_tex3d_dens_prev;
 
 CLData clData;
 
-
 //OpenCL globals
 int dims[3] = { NX, NY, NZ};
 
@@ -75,17 +75,20 @@ int dims[3] = { NX, NY, NZ};
 void init_opencl()
 {
 #if !__APPLE__
-  OpenCLUtil::createContextOn(CHOOSE_INTERACTIVELY, CHOOSE_INTERACTIVELY, 0, &clData.ctx, &clData.queue, 0);
+  clData.clMgr.createContext(CHOOSE_INTERACTIVELY, CHOOSE_INTERACTIVELY, 0, 0);
+  //OpenCLUtil::createContextOn(CHOOSE_INTERACTIVELY, CHOOSE_INTERACTIVELY, 0, &clData.ctx, &clData.clMgr.getQueue(), 0);
 #else
 #if USE_OPENCL_ON_CPU
-  OpenCLUtil::createContextOn("Apple", "Intel", 0, &clData.ctx, &clData.queue, 0);
+  clData.clMgr.createContext("Apple", "Intel", 0, 0);
+//  OpenCLUtil::createContextOn("Apple", "Intel", 0, &clData.ctx, &clData.clMgr.getQueue(), 0);
 #else
-  OpenCLUtil::createContextOn("Apple", "Intel", 0, &clData.ctx, &clData.queue, 0);
-  //OpenCLUtil::createContextOn("Apple", "GeForce", 0, &clData.ctx, &clData.queue, 0);
+  clData.clMgr.createContext("Apple", "Intel", 0, 0);
+  //OpenCLUtil::createContextOn("Apple", "GeForce", 0, &clData.ctx, &clData.clMgr.getQueue(), 0);
 #endif
 #endif
   
-  set_device_id(&clData);
+  //Not needed anymore - in clMgr
+  //set_device_id(&clData);
   
    init_cl_data(&clData,H,NX*NY*NZ,4, NX,NY,NZ);
 }
@@ -133,7 +136,7 @@ void transfer_buffers_to_cpu()
 
 void flush_cl_queue()
 {
-   CALL_CL_GUARDED(clFinish, (clData.queue));
+   CALL_CL_GUARDED(clFinish, (clData.clMgr.getQueue()));
 }
 
 static void free_data ( void )
@@ -605,8 +608,8 @@ void runTimings(){
   allocate_cl_buffers(&clData);
   
  
-  OpenCLUtil::printDeviceInfoFromQueue(clData.queue);
-  OpenCLUtil::getDeviceNameFromQueue(clData.queue, device_name, 256);
+  OpenCLUtil::printDeviceInfoFromQueue(clData.clMgr.getQueue());
+  OpenCLUtil::getDeviceNameFromQueue(clData.clMgr.getQueue(), device_name, 256);
   
   transfer_buffers_to_gpu();
   
@@ -892,61 +895,70 @@ static void test_opencl_opengl_interop()
 {
   cl_int status;
   
-  CGLContextObj gl_context = CGLGetCurrentContext();
-//  const char * err = CGLErrorString(kCGLContext);
-  
-  CGLShareGroupObj kCGLShareGroup = CGLGetShareGroup(gl_context);
-  
-
-  cl_context_properties properties[] = {
-    CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE,
-    (cl_context_properties)kCGLShareGroup, 0
-  };
-
-  clData.ctx = clCreateContext(properties, 0, 0, 0, 0, &status);
-  CHECK_CL_ERROR(status, "clCreateContext");
-  
-  // And now we can ask OpenCL which particular device is being used by
-  // OpenGL to do the rendering, currently:
-  cl_device_id renderer;
-  clGetGLContextInfoAPPLE(clData.ctx, gl_context,
-                          CL_CGL_DEVICE_FOR_CURRENT_VIRTUAL_SCREEN_APPLE, sizeof(renderer),
-                          &renderer, NULL);
-  
-  cl_uint id_in_use;
-  clGetDeviceInfo(renderer, CL_DEVICE_VENDOR_ID, sizeof(cl_uint),
-                  &id_in_use, NULL);
-  
-  clData.device = renderer;
-  
-  cl_command_queue_properties qprops = 0;
-  
-  clData.queue = clCreateCommandQueue(clData.ctx, clData.device, qprops, &status);
-  CHECK_CL_ERROR(status, "clCreateCommandQueue");
-  
-  
-  
-  
-  int extensionExists = 0;
-  
-  size_t extensionSize;
-  int ciErrNum = clGetDeviceInfo( clData.device, CL_DEVICE_EXTENSIONS, 0, NULL, &extensionSize );
-  char* extensions = (char*) malloc( extensionSize);
-  ciErrNum = clGetDeviceInfo( clData.device, CL_DEVICE_EXTENSIONS, extensionSize, extensions, &extensionSize);
-  
-  char * pch;
-  //printf ("Splitting extensions string \"%s\" into tokens:\n",extensions);
-  pch = strtok (extensions," ");
-  while (pch != NULL)
-  {
-    printf ("%s\n",pch);
-    if(strcmp(pch, GL_SHARING_EXTENSION) == 0) {
-      printf("Device supports gl sharing\n");
-      extensionExists = 1;
-      break;
-    }
-    pch = strtok (NULL, " ");
+  clData.clMgr.createContextForOpenGLOSX();
+  if(OpenCLUtil::doesDeviceSupportOpenGLSharing(clData.clMgr)){
+    printf("Device supports OpenGL Sharing!\n");
   }
+
+//  CGLContextObj gl_context = CGLGetCurrentContext();
+////  const char * err = CGLErrorString(kCGLContext);
+//  
+//  CGLShareGroupObj kCGLShareGroup = CGLGetShareGroup(gl_context);
+//  
+//
+//  cl_context_properties properties[] = {
+//    CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE,
+//    (cl_context_properties)kCGLShareGroup, 0
+//  };
+//
+//  cl_context ctx = clCreateContext(properties, 0, 0, 0, 0, &status);
+//  clData.clMgr.setContext(ctx);
+//  CHECK_CL_ERROR(status, "clCreateContext");
+//  
+//  // And now we can ask OpenCL which particular device is being used by
+//  // OpenGL to do the rendering, currently:
+//  cl_device_id renderer;
+//  clGetGLContextInfoAPPLE(clData.clMgr.getContext(), gl_context,
+//                          CL_CGL_DEVICE_FOR_CURRENT_VIRTUAL_SCREEN_APPLE, sizeof(renderer),
+//                          &renderer, NULL);
+//  
+//  cl_uint id_in_use;
+//  clGetDeviceInfo(renderer, CL_DEVICE_VENDOR_ID, sizeof(cl_uint),
+//                  &id_in_use, NULL);
+//  
+//  clData.device = renderer;
+//  
+//  cl_command_queue_properties qprops = 0;
+//  
+//  clData.queue = clCreateCommandQueue(clData.ctx, clData.device, qprops, &status);
+//  CHECK_CL_ERROR(status, "clCreateCommandQueue");
+//  
+  
+//
+//  
+//  
+//  int extensionExists = 0;
+//  
+//  size_t extensionSize;
+//  int ciErrNum = clGetDeviceInfo( clData.device, CL_DEVICE_EXTENSIONS, 0, NULL, &extensionSize );
+//  char* extensions = (char*) malloc( extensionSize);
+//  ciErrNum = clGetDeviceInfo( clData.device, CL_DEVICE_EXTENSIONS, extensionSize, extensions, &extensionSize);
+//  
+//  char * pch;
+//  //printf ("Splitting extensions string \"%s\" into tokens:\n",extensions);
+//  pch = strtok (extensions," ");
+//  while (pch != NULL)
+//  {
+//    printf ("%s\n",pch);
+//    if(strcmp(pch, GL_SHARING_EXTENSION) == 0) {
+//      printf("Device supports gl sharing\n");
+//      extensionExists = 1;
+//      break;
+//    }
+//    pch = strtok (NULL, " ");
+//  }
+//
+//  free(extensions);
   
   
   

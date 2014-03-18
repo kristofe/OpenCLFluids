@@ -80,6 +80,7 @@ using namespace boost::numeric;
     ret.x = CLAMP(min, max, ret.x);
     ret.y = CLAMP(min, max, ret.y);
     ret.z = CLAMP(min, max, ret.z);
+    return ret;
   }
 
   int3 clampi3(int3 src, float min, float max) {
@@ -87,6 +88,7 @@ using namespace boost::numeric;
     ret.x = CLAMP(min, max, ret.x);
     ret.y = CLAMP(min, max, ret.y);
     ret.z = CLAMP(min, max, ret.z);
+    return ret;
   }
 
   static void copy_grid(float *source, float * dest)
