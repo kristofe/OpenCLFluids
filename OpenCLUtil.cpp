@@ -1,11 +1,13 @@
-#include "OpenCLUtil.h"
-#include "OpenCLManager.h"
 #include <string.h>
+#include "OpenCLManager.h"
+#include "OpenCLUtil.h"
 
 
 #define OPENCL_SHARE_WITH_OPENGL 1
 
 #define MAX_NAME_LEN 1000
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
 
 
 
@@ -167,9 +169,7 @@ char *OpenCLUtil::readALine(void)
 }
 
 
-//TODO: Move to general utility class or header
-#define MIN(a,b) (((a)<(b))?(a):(b))
-#define MAX(a,b) (((a)>(b))?(a):(b))
+
 
 void OpenCLUtil::createContextOn(const char *plat_name, const char*dev_name, cl_uint idx,
     cl_context *ctx, cl_command_queue *queue, int enable_profiling)
