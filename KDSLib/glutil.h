@@ -4,7 +4,7 @@
 #ifdef WIN32
    #include <GL/gl.h>
 #else
-   #include <OpenGL/gl3.h>
+   //#include <OpenGL/gl3.h>
 #endif
 #include <string>
 #include <sstream>

@@ -24,6 +24,10 @@
   #include <OpenCL/cl_gl_ext.h>
 #endif
 #include "GLFW/glfw3.h" // - lib is in /usr/local/lib/libglfw3.a
+#include "KDSLib/glutil.h"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
 #include "OpenCLUtil.h"
 #include "OpenCLManager.h"
@@ -1030,9 +1034,12 @@ void sizeViewport(GLFWwindow* window){
   glfwGetFramebufferSize(window, &win_x, &win_y);
   glViewport(0, 0, win_x, win_y);
 
+  float ratio = win_x/(float) win_y;
 	glMatrixMode ( GL_PROJECTION );
 	glLoadIdentity ();
-	gluOrtho2D ( 0.0, 1.0, 0.0, 1.0 );
+	//gluOrtho2D ( 0.0, 1.0, 0.0, 1.0 );
+  glm::mat4 ortho = glm::ortho(0.0f, 1.0f, 0.0f, 1.0f);
+  glLoadMatrixf(glm::value_ptr(ortho));
 	glClearColor ( 0.0f, 0.0f, 0.0f, 1.0f );
 	glClear ( GL_COLOR_BUFFER_BIT );}
 
