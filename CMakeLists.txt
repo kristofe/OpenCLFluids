@@ -6,6 +6,7 @@ set(SOURCES
 #cl-helper.c
    OpenCLUtil.cpp
    OpenCLManager.cpp
+   GLLib/glhelper.cpp
 )
 
 set(HEADERS

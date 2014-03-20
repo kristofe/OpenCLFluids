@@ -30,16 +30,16 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = "/Applications/CMake 2.8-12.app/Contents/bin/cmake"
+CMAKE_COMMAND = /opt/local/bin/cmake
 
 # The command to remove a file.
-RM = "/Applications/CMake 2.8-12.app/Contents/bin/cmake" -E remove -f
+RM = /opt/local/bin/cmake -E remove -f
 
 # Escaping for special characters.
 EQUALS = =
 
 # The program to use to edit the cache.
-CMAKE_EDIT_COMMAND = "/Applications/CMake 2.8-12.app/Contents/bin/ccmake"
+CMAKE_EDIT_COMMAND = /opt/local/bin/ccmake
 
 # The top-level source directory on which CMake was run.
 CMAKE_SOURCE_DIR = /Users/kristofe/Documents/Projects/OpenCLFluids
@@ -53,7 +53,7 @@ CMAKE_BINARY_DIR = /Users/kristofe/Documents/Projects/OpenCLFluids
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
-	"/Applications/CMake 2.8-12.app/Contents/bin/ccmake" -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	/opt/local/bin/ccmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : edit_cache
 
 # Special rule for the target edit_cache
@@ -63,7 +63,7 @@ edit_cache/fast: edit_cache
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	"/Applications/CMake 2.8-12.app/Contents/bin/cmake" -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	/opt/local/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : rebuild_cache
 
 # Special rule for the target rebuild_cache
@@ -113,6 +113,30 @@ fluidsim: cmake_check_build_system
 fluidsim/fast:
 	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/build
 .PHONY : fluidsim/fast
+
+GLLib/glhelper.o: GLLib/glhelper.cpp.o
+.PHONY : GLLib/glhelper.o
+
+# target to build an object file
+GLLib/glhelper.cpp.o:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/GLLib/glhelper.cpp.o
+.PHONY : GLLib/glhelper.cpp.o
+
+GLLib/glhelper.i: GLLib/glhelper.cpp.i
+.PHONY : GLLib/glhelper.i
+
+# target to preprocess a source file
+GLLib/glhelper.cpp.i:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/GLLib/glhelper.cpp.i
+.PHONY : GLLib/glhelper.cpp.i
+
+GLLib/glhelper.s: GLLib/glhelper.cpp.s
+.PHONY : GLLib/glhelper.s
+
+# target to generate assembly for a file
+GLLib/glhelper.cpp.s:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/GLLib/glhelper.cpp.s
+.PHONY : GLLib/glhelper.cpp.s
 
 OpenCLManager.o: OpenCLManager.cpp.o
 .PHONY : OpenCLManager.o
@@ -195,6 +219,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... fluidsim"
 	@echo "... rebuild_cache"
+	@echo "... GLLib/glhelper.o"
+	@echo "... GLLib/glhelper.i"
+	@echo "... GLLib/glhelper.s"
 	@echo "... OpenCLManager.o"
 	@echo "... OpenCLManager.i"
 	@echo "... OpenCLManager.s"

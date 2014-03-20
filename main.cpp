@@ -24,7 +24,7 @@
   #include <OpenCL/cl_gl_ext.h>
 #endif
 #include "GLFW/glfw3.h" // - lib is in /usr/local/lib/libglfw3.a
-#include "KDSLib/glutil.h"
+#include "GLLib/glhelper.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
@@ -1097,6 +1097,8 @@ int main(void)
 
   init();
 
+  GLHelper glHelper;
+  printf("Testing glHelper: %s\n",glHelper.glEnumToString(GL_STREAM_DRAW).c_str());
   while (!glfwWindowShouldClose(window))
   {
     sizeViewport(window);
