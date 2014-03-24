@@ -2,22 +2,25 @@
 #define GLLIB_MESH_H
 
 #include "glutils.h"
+
+#define BYTES_PER_FLOAT 4
+
 namespace gllib
 {
   class MeshData{
 
     public:
-      MeshData(std::string name, GLuint type, GLenum componentType);
+      MeshData(std::string name, GLenum type);
 
     public:
-      void constructBuffer(void * data, int arrayLength, int numComponents); 
+      void constructBuffer(void * data, int numItems); 
       void updateBuffer();
 
     public:
       const GLvoid*   _data;
-      GLuint          _type;
-      GLenum          _componentType;
-      int             _itemSize;
+      GLenum          _type;//Doesn't seem to be used at all
+      //GLenum          _componentType;
+      //int             _itemSize;
       int             _numItems;
       GLuint          _buffer;
       GLenum          _bufferType;
@@ -38,10 +41,12 @@ struct AttributeData{
 class Mesh{
 
   public:
+    Mesh();
+    ~Mesh();
 
     void clear();
     void constructBuffers() ;
-    MeshData& constructBuffer(data, name, type, numComponents) ;
+    MeshData& constructBuffer(void * data, int data_size, std::string& name, GLuint type, int numComponents);
     void addBuffer(MeshData* buf) ;
     void updateBuffers() ;
     void createScreenQuad(Vector2& min, Vector2& max);
@@ -49,8 +54,6 @@ class Mesh{
     void createSphereMeshData(int slices, int stacks);
     void createGridMesh(n, m, tileUVs);
     void createTriStripGridMeshData(n, m, tileUVs);
-    void* createGridMeshData(n, m, tileUVs);
-    void calculateTangents(verts);
 
   public:
     std::vector<MeshData*> _buffers;
