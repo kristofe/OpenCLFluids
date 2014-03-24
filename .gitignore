@@ -2,4 +2,6 @@ CMakeCache.txt
 CMakeFiles
 cmake_install.cmake
 fluidsim
+Xcode/OpenCLFluids.xcodeproj/project.xcworkspace/xcshareddata/
+
 
