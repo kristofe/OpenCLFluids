@@ -114,29 +114,77 @@ fluidsim/fast:
 	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/build
 .PHONY : fluidsim/fast
 
-GLLib/glhelper.o: GLLib/glhelper.cpp.o
-.PHONY : GLLib/glhelper.o
+KDSLIB/glhelper.o: KDSLIB/glhelper.cpp.o
+.PHONY : KDSLIB/glhelper.o
 
 # target to build an object file
-GLLib/glhelper.cpp.o:
-	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/GLLib/glhelper.cpp.o
-.PHONY : GLLib/glhelper.cpp.o
+KDSLIB/glhelper.cpp.o:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/KDSLIB/glhelper.cpp.o
+.PHONY : KDSLIB/glhelper.cpp.o
 
-GLLib/glhelper.i: GLLib/glhelper.cpp.i
-.PHONY : GLLib/glhelper.i
+KDSLIB/glhelper.i: KDSLIB/glhelper.cpp.i
+.PHONY : KDSLIB/glhelper.i
 
 # target to preprocess a source file
-GLLib/glhelper.cpp.i:
-	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/GLLib/glhelper.cpp.i
-.PHONY : GLLib/glhelper.cpp.i
+KDSLIB/glhelper.cpp.i:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/KDSLIB/glhelper.cpp.i
+.PHONY : KDSLIB/glhelper.cpp.i
 
-GLLib/glhelper.s: GLLib/glhelper.cpp.s
-.PHONY : GLLib/glhelper.s
+KDSLIB/glhelper.s: KDSLIB/glhelper.cpp.s
+.PHONY : KDSLIB/glhelper.s
 
 # target to generate assembly for a file
-GLLib/glhelper.cpp.s:
-	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/GLLib/glhelper.cpp.s
-.PHONY : GLLib/glhelper.cpp.s
+KDSLIB/glhelper.cpp.s:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/KDSLIB/glhelper.cpp.s
+.PHONY : KDSLIB/glhelper.cpp.s
+
+KDSLIB/glprogram.o: KDSLIB/glprogram.cpp.o
+.PHONY : KDSLIB/glprogram.o
+
+# target to build an object file
+KDSLIB/glprogram.cpp.o:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/KDSLIB/glprogram.cpp.o
+.PHONY : KDSLIB/glprogram.cpp.o
+
+KDSLIB/glprogram.i: KDSLIB/glprogram.cpp.i
+.PHONY : KDSLIB/glprogram.i
+
+# target to preprocess a source file
+KDSLIB/glprogram.cpp.i:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/KDSLIB/glprogram.cpp.i
+.PHONY : KDSLIB/glprogram.cpp.i
+
+KDSLIB/glprogram.s: KDSLIB/glprogram.cpp.s
+.PHONY : KDSLIB/glprogram.s
+
+# target to generate assembly for a file
+KDSLIB/glprogram.cpp.s:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/KDSLIB/glprogram.cpp.s
+.PHONY : KDSLIB/glprogram.cpp.s
+
+KDSLIB/glutil.o: KDSLIB/glutil.cpp.o
+.PHONY : KDSLIB/glutil.o
+
+# target to build an object file
+KDSLIB/glutil.cpp.o:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/KDSLIB/glutil.cpp.o
+.PHONY : KDSLIB/glutil.cpp.o
+
+KDSLIB/glutil.i: KDSLIB/glutil.cpp.i
+.PHONY : KDSLIB/glutil.i
+
+# target to preprocess a source file
+KDSLIB/glutil.cpp.i:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/KDSLIB/glutil.cpp.i
+.PHONY : KDSLIB/glutil.cpp.i
+
+KDSLIB/glutil.s: KDSLIB/glutil.cpp.s
+.PHONY : KDSLIB/glutil.s
+
+# target to generate assembly for a file
+KDSLIB/glutil.cpp.s:
+	$(MAKE) -f CMakeFiles/fluidsim.dir/build.make CMakeFiles/fluidsim.dir/KDSLIB/glutil.cpp.s
+.PHONY : KDSLIB/glutil.cpp.s
 
 OpenCLManager.o: OpenCLManager.cpp.o
 .PHONY : OpenCLManager.o
@@ -219,9 +267,15 @@ help:
 	@echo "... edit_cache"
 	@echo "... fluidsim"
 	@echo "... rebuild_cache"
-	@echo "... GLLib/glhelper.o"
-	@echo "... GLLib/glhelper.i"
-	@echo "... GLLib/glhelper.s"
+	@echo "... KDSLIB/glhelper.o"
+	@echo "... KDSLIB/glhelper.i"
+	@echo "... KDSLIB/glhelper.s"
+	@echo "... KDSLIB/glprogram.o"
+	@echo "... KDSLIB/glprogram.i"
+	@echo "... KDSLIB/glprogram.s"
+	@echo "... KDSLIB/glutil.o"
+	@echo "... KDSLIB/glutil.i"
+	@echo "... KDSLIB/glutil.s"
 	@echo "... OpenCLManager.o"
 	@echo "... OpenCLManager.i"
 	@echo "... OpenCLManager.s"

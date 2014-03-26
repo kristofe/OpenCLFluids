@@ -1,11 +1,14 @@
 #ifndef KDSLIB_GLUTIL_H
 #define KDSLIB_GLUTIL_H
 
+#define GLFW_INCLUDE_CLCOREARB
+#include "../GLFW/glfw3.h" // - lib is in /usr/local/lib/libglfw3.a
 #ifdef WIN32
-   #include <GL/gl.h>
+  #include <GL/gl.h>
 #else
-   //#include <OpenGL/gl3.h>
+  #include <OpenGL/gl3.h>
 #endif
+
 #include <string>
 #include <sstream>
 #include <iostream>

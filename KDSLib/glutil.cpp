@@ -1,7 +1,7 @@
 #include <vector>
 #include <stdio.h>
-#include "include/glutil.h"
-#include "glm/glm.hpp"
+#include "glutil.h"
+#include "../glm/glm.hpp"
 
 namespace kdslib{
 

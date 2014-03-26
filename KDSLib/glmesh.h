@@ -2,8 +2,8 @@
 #define GLMESH_H
 #include "glutil.h"
 #include "glprogram.h"
-#include "glm/glm.hpp"
-#include "Vertex.h"
+#include "../glm/glm.hpp"
+#include "vertex.h"
 #include <vector>
 
 
@@ -28,14 +28,15 @@ public:
 
   int GetVertexListSizeInBytes();
   int GetIndexListSizeInBytes();
+  void CreateBuffers(GLProgram *program);
 
 private:
   DISALLOW_COPY_AND_ASSIGN(GLMesh);
 
 //Data Members
 protected:
-  GLint _vao;
-  GLint _vbo;
+  GLuint _vao;
+  GLuint _vbo;
 
   std::vector<Vector3> _positions;
   std::vector<Vector3> _normals;
@@ -48,17 +49,17 @@ protected:
 };
 
 
-int GetVertexListSizeInBytes()
+int GLMesh::GetVertexListSizeInBytes()
 {
   return _positions.size()*sizeof(Vertex);
 }
 
-int GetIndexListSizeInBytes()
+int GLMesh::GetIndexListSizeInBytes()
 {
   return _indices.size()*sizeof(GLuint);
 }
 
-void CreateBuffers(GLProgram *program)
+void GLMesh::CreateBuffers(GLProgram *program)
 {
   /*
   TODO:This doesn't belong here.  We need a display object, renderer
@@ -78,10 +79,10 @@ void CreateBuffers(GLProgram *program)
   // Put the verticies into the VBO
   glBufferData(GL_ARRAY_BUFFER,
                GetVertexListSizeInBytes(),
-               &_verts<Vertex>[0].x,
+               &_verts[0].position.x,
                GL_STATIC_DRAW);
 
-  Vertex::GetAttributes(&_attributes);
+  Vertex::GetAttributeInfo(&_attributes);
 
   std::vector<VertexAttributeInfo>::iterator attr_it =  _attributes.begin();
 
@@ -99,7 +100,7 @@ void CreateBuffers(GLProgram *program)
                             attr_it->buffer_offset);
       std::cout << "Setup " << attr_it->name << " Slot = " << attr_it->location << std::endl; std::cout.flush();
       glDisableVertexAttribArray(attr_it->location);
-      ++it;
+      ++attr_it;
 
    }
 
@@ -110,7 +111,7 @@ void CreateBuffers(GLProgram *program)
 
    while(uni_it != _uniforms.end())
    {
-      uni_it->location = program.getUniformLocation(uni_it->name);
+      uni_it->location = program->getUniformLocation(uni_it->name);
       std::cout << "Setup " << uni_it->name << " Uniform Slot = " <<
                    uni_it->location << std::endl; std::cout.flush();
 

@@ -6,7 +6,10 @@ set(SOURCES
 #cl-helper.c
    OpenCLUtil.cpp
    OpenCLManager.cpp
-   GLLib/glhelper.cpp
+)
+file(GLOB KDSLIB_SRC
+    "KDSLIB/*.h"
+    "KDSLIB/*.cpp"
 )
 
 set(HEADERS
@@ -50,7 +53,7 @@ set(GLFWLIB_PATH "/Users/kristofe/Documents/Projects/glfw-3.0.1/CMake/src")
 
 ##add_subdirectory(${KDSLIB_PATH} ${KDSLIB_BUILD_PATH})
 #include_directories(${KDSLIB_INCLUDE_PATH} ${GLM_INCLUDE_PATH})
-link_directories(${KDSLIB_BUILD_PATH} ${GLFWLIB_PATH})
+link_directories(${GLFWLIB_PATH})
 
 if(APPLE)
    FIND_LIBRARY(IOKIT_LIBRARY IOKit)
@@ -72,5 +75,5 @@ ENDIF(APPLE)
 
 
 
-add_executable(fluidsim ${SOURCES} ${HEADERS})
+add_executable(fluidsim ${SOURCES} ${HEADERS} ${KDSLIB_SRC})
 target_link_libraries(fluidsim ${EXTRA_LIBS})

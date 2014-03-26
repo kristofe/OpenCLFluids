@@ -10,7 +10,7 @@ struct VertexAttributeInfo
 {
   public:
     VertexAttributeInfo(const std::string pname,
-                        int pbuffer_offset,
+                        void * pbuffer_offset,
                         int pmemory_type,
                         int pcount_of_memory_type
                         ) :
@@ -24,7 +24,7 @@ struct VertexAttributeInfo
 
   public:
     std::string name;
-    int buffer_offset;
+    void * buffer_offset;
     int memory_type;
     int count_of_memory_type;
     int location;
@@ -34,11 +34,11 @@ struct VertexAttributeInfo
 struct Vertex
 {
 public:
-  static int get_position_offset(){ return BUFFER_OFFSET(0); }
-  static int get_normal_offset(){ return BUFFER_OFFSET(sizeof(Vector3)*1); }
-  static int get_uv_offset(){ return BUFFER_OFFSET(sizeof(Vector3)*2); }
-  static int get_uv2_offset(){ return BUFFER_OFFSET(sizeof(Vector3)*3); }
-  static int get_color_offset(){ return BUFFER_OFFSET(sizeof(Vector3)*4); }
+  static void * get_position_offset(){ return BUFFER_OFFSET(0); }
+  static void * get_normal_offset(){ return BUFFER_OFFSET(sizeof(Vector3)*1); }
+  static void * get_uv_offset(){ return BUFFER_OFFSET(sizeof(Vector3)*2); }
+  static void * get_uv2_offset(){ return BUFFER_OFFSET(sizeof(Vector3)*3); }
+  static void * get_color_offset(){ return BUFFER_OFFSET(sizeof(Vector3)*4); }
 
   static void GetAttributeInfo(std::vector<VertexAttributeInfo> *attributes)
   {

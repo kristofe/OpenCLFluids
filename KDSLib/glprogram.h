@@ -14,26 +14,26 @@ public:
 
   GLProgram(std::string& vsFileName, std::string& fsFileName)
   {
-      _programID =  kdslib::GLUtil::loadShaders(vsFileName, fsFileName, "");
+      _programID =  GLUtil::loadShaders(vsFileName, fsFileName, "");
   }
 
   GLProgram(const std::string& vsFileName,
             const std::string& fsFileName,
             const std::string& gsFileName)
   {
-      _programID =  kdslib::GLUtil::loadShaders(vsFileName, fsFileName, gsFileName);
+      _programID =  GLUtil::loadShaders(vsFileName, fsFileName, gsFileName);
   }
 
   void loadShaders(const std::string& vsFileName, const std::string& fsFileName)
   {
-      _programID =  kdslib::GLUtil::loadShaders(vsFileName, fsFileName, "");
+      _programID =  GLUtil::loadShaders(vsFileName, fsFileName, "");
   }
 
   void loadShaders(const std::string& vsFileName,
                    const std::string& fsFileName,
                    const std::string& gsFileName)
   {
-      _programID =  kdslib::GLUtil::loadShaders(vsFileName, fsFileName, gsFileName);
+      _programID =  GLUtil::loadShaders(vsFileName, fsFileName, gsFileName);
   }
 
   GLint getAttributeLocation(const std::string& name)
