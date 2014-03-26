@@ -207,8 +207,8 @@ void Mesh::createSphereMesh(int slices, int stacks){
 
 void Mesh::createSphereMeshData(int slices, int stacks){
   for (int stack = 0; stack < stacks; stack++) {
-    float theta = stack *  M_PI / stacks;
-    float thetaNext = (stack + 1) * M_PI / stacks;
+    float theta = stack *  glm::pi() / stacks;
+    float thetaNext = (stack + 1) * glm::pi() / stacks;
     float sinTheta = sinf(theta);
     float cosTheta = cosf(theta);
     float sinThetaNext = sinf(thetaNext);
@@ -216,8 +216,8 @@ void Mesh::createSphereMeshData(int slices, int stacks){
 
 
     for (int slice = 0; slice < slices; slice++) {
-      flaot phi = slice * 2 * M_PI / slices;
-      float phiNext = (slice + 1) * 2 * M_PI / slices;
+      flaot phi = slice * 2 * glm::pi() / slices;
+      float phiNext = (slice + 1) * 2 * glm::pi() / slices;
       float sinPhi = sinf(phi);
       float cosPhi = cosf(phi);
       float sinPhiNext = sinf(phiNext);
@@ -448,12 +448,12 @@ void CalculateTangentArray(long vertexCount, const Point3D *vertex, const Vector
 Mesh.prototype.createSphereMeshDataWithIndices = function(slices, stacks){
   vertices = [];
   for (var stack = 0; stack < stacks; stack++) {
-    var theta = stack * M_PI / stacks;
+    var theta = stack * glm::pi() / stacks;
     var sinTheta = sinf(theta);
     var cosTheta = cosf(theta);
 
     for (var slice = 0; slice < slices; slice++) {
-      var phi = slice * 2 * M_PI / slices;
+      var phi = slice * 2 * glm::pi() / slices;
       var sinPhi = sinf(phi);
       var cosPhi = cosf(phi);
 
