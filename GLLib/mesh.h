@@ -1,7 +1,7 @@
 #ifndef GLLIB_MESH_H
 #define GLLIB_MESH_H
 
-#include "glutils.h"
+#include "../KDSLib/glutil.h"
 
 #define BYTES_PER_FLOAT 4
 

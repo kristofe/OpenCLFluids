@@ -42,6 +42,7 @@
 #include "OpenCLManager.h"
 //#include "cl-helper.h"
 #include "timing.h"
+//#include "GLLib/mesh.h"
 
 
 //#include "combustion_particle_system.h"
@@ -78,6 +79,8 @@ int useCG;
 
 //OpenGL buffers to replace the opencl arrays
 unsigned int gl_tex3d_dens, gl_tex3d_dens_prev;
+unsigned int gl_tex2d_dens;
+float * g_dens_slice;
 
 CLData clData;
 
@@ -174,6 +177,8 @@ static void free_data ( void )
   if (g_cg_d) free (g_cg_d);
   if (g_cg_q) free (g_cg_q);
   
+//  if(densityMesh) delete densityMesh;
+	if ( g_dens_slice ) free ( g_dens_slice );
 	
 }
 
@@ -226,9 +231,15 @@ static int allocate_data ( void )
 	//particle_system = new CombustionParticleSystem(100,win_x,win_y,N);
   g_laplacian_matrix = (float *) malloc ( size*size*sizeof(float) );
   
+
+  //densityMesh = new Mesh();
+  //densityMesh.createGridMesh(NX,NY, true);
+	g_dens_slice		= (float *) malloc ( size*sizeof(float) );	
+
 	return ( 1 );
 }
 
+/*
 static void create_opengl_textures()
 {
   glGenTextures(1,&gl_tex3d_dens);
@@ -256,8 +267,18 @@ static void create_opengl_textures()
   glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, NX, NY, NZ, 0, GL_RED, GL_FLOAT, g_dens);
   //glTexImage3D(GL_TEXTURE_3D, 0, GL_R, NX, NY, NZ, 0, GL_RED, GL_FLOAT, g_dens);
   
+  glGenTextures(1,&gl_tex2d_dens);
+  glBindTexture(GL_TEXTURE_2D, gl_tex2d_dens);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
+  
+  //Don't know about GL_R32F GL_RED.  Do I need to upload data?  I only want zeros to start.
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, NX, NY, 0, GL_RED, GL_FLOAT, g_dens_slice);
 }
-
+*/
 
 /*
   ----------------------------------------------------------------------
@@ -326,6 +347,7 @@ static void draw_pressure ( void )
 	glEnd ();
 }
 
+
 static void draw_density ( void )
 {
 	int i, j;
@@ -352,7 +374,8 @@ static void draw_density ( void )
 			}
 		}
 
-	glEnd ();
+	glEnd (); 
+  
 }
 /*
   ----------------------------------------------------------------------
@@ -1095,24 +1118,29 @@ static void mouse_position_callback(GLFWwindow* window, double xpos, double ypos
 using namespace kdslib;
 
 typedef struct {
-   GLfloat x, y, z, r, g, b;
-} Triangle;
+   GLfloat x, y, z, r, g, b, u, v;
+} Quad;
 
-Triangle triangle[3] = {
-   {-1.0f, -1.0f, 0.f, 1.f, 0.f, 0.f},
-   {1.0f, -1.0f, 0.f,0.f, 1.f, 0.f},
-   {0.0f, 1.0f, 0.f,0.f, 0.f, 1.f}
+Quad quad[6] = {
+   {-1.0f, -1.0f, 0.f, 1.f, 0.f, 0.f, 0.0f, 0.0f},
+   {1.0f, -1.0f, 0.f,0.f, 1.f, 0.f, 1.0f, 0.0f},
+   {1.0f, 1.0f, 0.f,0.f, 0.f, 1.f, 1.0f, 1.0f},
+
+   {-1.0f, -1.0f, 0.f, 1.f, 0.f, 0.f, 0.0f, 0.0f},
+   {1.0f, 1.0f, 0.f,0.f, 0.f, 1.f, 1.0f, 1.0f},
+   {-1.0f, 1.0f, 0.f,0.f, 0.f, 1.f, 0.0f, 1.0f}
 };
 
-GLubyte indices[3] = {
-    0, 1, 2
+GLubyte indices[6] = {
+    0, 1, 2,
+    0, 2, 3
 };
 
 GLuint gVAO = 0;
 GLuint gVBO = 0;
 GLProgram program1;
 
-void loadTriangle()
+void loadQuad()
 {
    // make and bind the VAO
    glGenVertexArrays(1, &gVAO);
@@ -1122,13 +1150,13 @@ void loadTriangle()
    glGenBuffers(1, &gVBO);
    glBindBuffer(GL_ARRAY_BUFFER, gVBO);
 
-   // Put the three triangle verticies into the VBO
-   glBufferData(GL_ARRAY_BUFFER, sizeof(triangle), triangle, GL_STATIC_DRAW);
+   // Put the three quad verticies into the VBO
+   glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW);
 
    // connect the xyz to the "vert" attribute of the vertex shader
    GLint vertSlot = program1.getAttributeLocation("vert");
    glEnableVertexAttribArray(vertSlot);
-   glVertexAttribPointer(vertSlot, 3, GL_FLOAT, GL_FALSE, sizeof(Triangle),
+   glVertexAttribPointer(vertSlot, 3, GL_FLOAT, GL_FALSE, sizeof(Quad),
                          BUFFER_OFFSET(0));
 
    std::cout << "Setup Vert Slot = " << vertSlot << std::endl; std::cout.flush();
@@ -1137,26 +1165,62 @@ void loadTriangle()
    GLint colorSlot = program1.getAttributeLocation("color");
    std::cout << "Color Slot = " << colorSlot << std::endl; std::cout.flush();
    glEnableVertexAttribArray(colorSlot);
-   glVertexAttribPointer(colorSlot, 3, GL_FLOAT, GL_FALSE, sizeof(Triangle),
+   glVertexAttribPointer(colorSlot, 3, GL_FLOAT, GL_FALSE, sizeof(Quad),
                          BUFFER_OFFSET(sizeof(GLfloat)*3));
-
    std::cout << "Setup Color Slot = " << colorSlot << std::endl; std::cout.flush();
+   
+   GLint uvSlot = program1.getAttributeLocation("uv");
+   std::cout << "UV Slot = " << uvSlot << std::endl; std::cout.flush();
+   glEnableVertexAttribArray(uvSlot);
+   glVertexAttribPointer(uvSlot, 2, GL_FLOAT, GL_FALSE, sizeof(Quad),
+                         BUFFER_OFFSET(sizeof(GLfloat)*6));
+   std::cout << "Setup UV Slot = " << uvSlot << std::endl; std::cout.flush();
    GLUtil::checkGLErrors();
 
 
    GLint modelViewSlot = program1.getUniformLocation("modelview");
    std::cout << "Setup modelViewl Uniform Slot = " << modelViewSlot << std::endl; std::cout.flush();
-   std::cout << "Done setting up triangle" << std::endl; std::cout.flush();
+
+   GLint textureSlot = program1.getUniformLocation("tex");
+   std::cout << "Setup texture Uniform Slot = " << textureSlot << std::endl; std::cout.flush();
+   std::cout << "Done setting up quad" << std::endl; std::cout.flush();
 
    glDisableVertexAttribArray(vertSlot);
    glDisableVertexAttribArray(colorSlot);
+   glDisableVertexAttribArray(uvSlot);
 
    GLUtil::checkGLErrors();
+
+
+   //for now putting texture setup here
+
+   glGenTextures(1,&gl_tex2d_dens);
+   glActiveTexture(GL_TEXTURE0);
+   glBindTexture(GL_TEXTURE_2D, gl_tex2d_dens);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP);
+   for (int i=0 ; i<NX ; i++ ) {
+		for (int j=0 ; j<NY ; j++ ) {
+       g_dens_slice[IX(i,j,0)] = i/(float)NX;
+		}
+	 }
+   //Don't know about GL_R32F GL_RED.  Do I need to upload data?  I only want zeros to start.
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, NX, NY, 0, GL_RED, GL_FLOAT, g_dens_slice);
 }
 
 
-void drawTriangle(glm::mat4& mat)
+void drawQuad(glm::mat4& mat)
 {
+   
+		for (int i=0 ; i<NX ; i++ ) {
+			for (int j=0 ; j<NY ; j++ ) {
+        g_dens_slice[IX(i,j,0)] = g_dens[IX(i,j,0)];
+			}
+		}
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, NX, NY, 0, GL_RED, GL_FLOAT, g_dens_slice);
    // BUG: THERE IS AN OPENGL GL_ERROR 1282 if glEnableVertexAttribArray is
    // called in this function
 
@@ -1167,12 +1231,14 @@ void drawTriangle(glm::mat4& mat)
     glUniformMatrix4fv(program1.getUniformLocation("modelview"), 1, 0, &mat[0][0]);
     //GLUtil::checkGLErrors();
 
-    // bind the VAO (the triangle)
+    glUniform1i(program1.getUniformLocation("tex"),0);
+
+    // bind the VAO (the quad)
     glBindVertexArray(gVAO);
 
 
     // draw the VAO
-    glDrawArrays(GL_TRIANGLES, 0, sizeof(triangle)/sizeof(Triangle));
+    glDrawArrays(GL_TRIANGLES, 0, sizeof(quad)/sizeof(Quad));
 
 
     // unbind the VAO
@@ -1182,7 +1248,7 @@ void drawTriangle(glm::mat4& mat)
     // unbind the program
     glUseProgram(0);
 
-    GLUtil::checkGLErrors();
+    //GLUtil::checkGLErrors();
 }
 
 int main(void)
@@ -1210,10 +1276,10 @@ int main(void)
 
   init();
   
-  //Test stuff from draw triangle
+  //Test stuff from draw quad
   std::cout << GLUtil::getOpenGLInfo() << std::endl;std::cout.flush();
   program1.loadShaders("vertShader.glsl","fragShader.glsl","");
-  loadTriangle();
+  loadQuad();
 
   glm::mat4 identityMatrix = glm::mat4(1.0);//Identity matrix
 
@@ -1228,9 +1294,10 @@ int main(void)
     simulate();
     //display();
     
-    glm::mat4 rotMat = glm::rotate(identityMatrix,(float) glfwGetTime() * 50.f,
-                                   glm::vec3(0.f,0.f,1.f));
-    drawTriangle(rotMat);
+    //glm::mat4 rotMat = glm::rotate(identityMatrix,(float) glfwGetTime() * 50.f,
+    //                               glm::vec3(0.f,0.f,1.f));
+    glm::mat4 rotMat = identityMatrix;
+    drawQuad(rotMat);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
