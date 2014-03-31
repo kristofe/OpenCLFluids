@@ -1038,7 +1038,7 @@ void hintOpenGL32CoreProfile(){
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 }
 
-void sizeViewport_FLUIDS(GLFWwindow* window){
+void sizeViewport(GLFWwindow* window){
   glfwGetFramebufferSize(window, &win_x, &win_y);
   glViewport(0, 0, win_x, win_y);
 
@@ -1049,7 +1049,8 @@ void sizeViewport_FLUIDS(GLFWwindow* window){
   glm::mat4 ortho = glm::ortho(0.0f, 1.0f, 0.0f, 1.0f);
   glLoadMatrixf(glm::value_ptr(ortho));
 	glClearColor ( 0.0f, 0.0f, 0.0f, 1.0f );
-	glClear ( GL_COLOR_BUFFER_BIT );}
+	glClear ( GL_COLOR_BUFFER_BIT );
+}
 
 static void error_callback(int error, const char* description)
 {
@@ -1078,56 +1079,6 @@ static void mouse_position_callback(GLFWwindow* window, double xpos, double ypos
 
 }
 
-
-
-int main_FLUIDS(void)
-{
-  win_x = 512;
-	win_y = 512;
-  GLFWwindow* window;
-  glfwSetErrorCallback(error_callback);
-  if (!glfwInit())
-    exit(EXIT_FAILURE);
-
-  hintOpenGL32CoreProfile();
-  window = glfwCreateWindow(win_x, win_y, "Simple example", NULL, NULL);
-  if (!window)
-  {
-    glfwTerminate();
-    exit(EXIT_FAILURE);
-  }
-  glfwMakeContextCurrent(window);
-  glfwSetKeyCallback(window, key_callback);
-  glfwSetMouseButtonCallback(window, mouse_button_callback);
-  glfwSetCursorPosCallback(window, mouse_position_callback);
-
-  //std::cout << GLUtil::getOpenGLInfo() << std::endl;std::cout.flush();
-
-  init();
-
-  kdslib::GLHelper glHelper;
-  printf("Testing glHelper: %s\n",glHelper.glEnumToString(GL_STREAM_DRAW).c_str());
-  while (!glfwWindowShouldClose(window))
-  {
-    sizeViewport_FLUIDS(window);
-
-    simulate();
-    display();
-    
-    glfwSwapBuffers(window);
-    glfwPollEvents();
-  }
-
-  #if USE_OPENCL
-   cleanup_cl(&clData);
-#endif
-
-  glfwDestroyWindow(window);
-  glfwTerminate();
-  exit(EXIT_SUCCESS);
-}
-
-
 //START: TEST RENDERING STUFF
 //TODO: Move this kind of stuff into a renderer
 using namespace kdslib;
@@ -1137,9 +1088,9 @@ typedef struct {
 } Triangle;
 
 Triangle triangle[3] = {
-   {-0.6f, -0.4f, 0.f, 1.f, 0.f, 0.f},
-   {0.6f, -0.4f, 0.f,0.f, 1.f, 0.f},
-   {0.f, 0.6f, 0.f,0.f, 0.f, 1.f}
+   {-1.0f, -1.0f, 0.f, 1.f, 0.f, 0.f},
+   {1.0f, -1.0f, 0.f,0.f, 1.f, 0.f},
+   {0.0f, 1.0f, 0.f,0.f, 0.f, 1.f}
 };
 
 GLubyte indices[3] = {
@@ -1149,17 +1100,6 @@ GLubyte indices[3] = {
 GLuint gVAO = 0;
 GLuint gVBO = 0;
 GLProgram program1;
-
-void sizeViewport(GLFWwindow* window){
-  float ratio;
-  int width, height;
-  glfwGetFramebufferSize(window, &width, &height);
-  ratio = width / (float) height;
-  glViewport(0, 0, width, height);
-  glClear(GL_COLOR_BUFFER_BIT);
-  glm::mat4 ortho = glm::ortho(-ratio,ratio, -1.0f, 1.0f, 1.0f, -1.0f);
-
-}
 
 void loadTriangle()
 {
@@ -1172,12 +1112,6 @@ void loadTriangle()
    glBindBuffer(GL_ARRAY_BUFFER, gVBO);
 
    // Put the three triangle verticies into the VBO
-   GLfloat vertexData[] = {
-      //  X     Y     Z
-      0.0f, 0.8f, 0.0f,1.0,0.0,0.0,
-      -0.8f,-0.8f, 0.0f,0.0,1.0,0.0,
-      0.8f,-0.8f, 0.0f,0.0,0.0,1.0
-   };
    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle), triangle, GL_STATIC_DRAW);
 
    // connect the xyz to the "vert" attribute of the vertex shader
@@ -1240,16 +1174,17 @@ void drawTriangle(glm::mat4& mat)
     GLUtil::checkGLErrors();
 }
 
-
 int main(void)
 {
+  win_x = 512;
+	win_y = 512;
   GLFWwindow* window;
   glfwSetErrorCallback(error_callback);
   if (!glfwInit())
     exit(EXIT_FAILURE);
 
   hintOpenGL32CoreProfile();
-  window = glfwCreateWindow(640, 480, "Simple example", NULL, NULL);
+  window = glfwCreateWindow(win_x, win_y, "Simple example", NULL, NULL);
   if (!window)
   {
     glfwTerminate();
@@ -1257,7 +1192,14 @@ int main(void)
   }
   glfwMakeContextCurrent(window);
   glfwSetKeyCallback(window, key_callback);
+  glfwSetMouseButtonCallback(window, mouse_button_callback);
+  glfwSetCursorPosCallback(window, mouse_position_callback);
 
+  //std::cout << GLUtil::getOpenGLInfo() << std::endl;std::cout.flush();
+
+  init();
+  
+  //Test stuff from draw triangle
   std::cout << GLUtil::getOpenGLInfo() << std::endl;std::cout.flush();
   program1.loadShaders("vertShader.glsl","fragShader.glsl","");
   loadTriangle();
@@ -1266,18 +1208,29 @@ int main(void)
 
   program1.enableVertexAttributes();
 
+  kdslib::GLHelper glHelper;
+  printf("Testing glHelper: %s\n",glHelper.glEnumToString(GL_STREAM_DRAW).c_str());
   while (!glfwWindowShouldClose(window))
   {
     sizeViewport(window);
+
+    simulate();
+    //display();
+    
     glm::mat4 rotMat = glm::rotate(identityMatrix,(float) glfwGetTime() * 50.f,
                                    glm::vec3(0.f,0.f,1.f));
-
     drawTriangle(rotMat);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
+
+  #if USE_OPENCL
+   cleanup_cl(&clData);
+#endif
+
   glfwDestroyWindow(window);
   glfwTerminate();
   exit(EXIT_SUCCESS);
 }
+
