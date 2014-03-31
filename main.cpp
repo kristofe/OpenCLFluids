@@ -245,6 +245,17 @@ static void create_opengl_textures()
   
   
   glGenTextures(1,&gl_tex3d_dens_prev);
+  glBindTexture(GL_TEXTURE_3D, gl_tex3d_dens_prev);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
+  
+  //Don't know about GL_R32F GL_RED.  Do I need to upload data?  I only want zeros to start.
+  glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, NX, NY, NZ, 0, GL_RED, GL_FLOAT, g_dens);
+  //glTexImage3D(GL_TEXTURE_3D, 0, GL_R, NX, NY, NZ, 0, GL_RED, GL_FLOAT, g_dens);
+  
 }
 
 
