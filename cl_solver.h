@@ -12,6 +12,8 @@
   #define WGSIZE 1
 #endif
 
+#define USE_OPENGL_DATA 0
+
 #define BLOCK_SIZE 8
 //Has to be BLOCK_SIZE + 2
 #define BLOCK_SIZE_WITH_PAD 10
@@ -64,6 +66,9 @@ typedef struct CLData {
   int n;
   int dn;
   int dims[3];
+
+  GLuint gl_tex3d_dens;
+  GLuint gl_tex3d_dens_prev;
   
 } CLData;
 
@@ -107,7 +112,11 @@ void load_cl_kernels(CLData *clData)
 {
 
   clData->advect_density_kernel = 
+#if USE_OPENGL_DATA
+                     load_single_cl_kernel(clData,"kernels.cl","advectRK2_NEW");
+#else
                      load_single_cl_kernel(clData,"kernels.cl","advectRK2");
+#endif
 
 //  clData->advect_velocity_kernel =
 //                       load_single_cl_kernel(clData,"kernels.cl","advect_velocity_forward_euler");
@@ -163,6 +172,16 @@ void allocate_cl_buffers(CLData *clData)
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
 
 
+#if USE_OPENGL_DATA
+
+   clData->buf_dens = clCreateFromGLTexture(clData->clMgr.getContext(),CL_MEM_READ_WRITE,GL_TEXTURE_3D,0,clData->gl_tex3d_dens,&clData->status);
+  CHECK_CL_ERROR(clData->status, "clCreateBuffer");
+
+   clData->buf_dens_prev = clCreateFromGLTexture(clData->clMgr.getContext(),CL_MEM_READ_WRITE,GL_TEXTURE_3D,0,clData->gl_tex3d_dens_prev,&clData->status);
+  CHECK_CL_ERROR(clData->status, "clCreateBuffer");
+  
+#else
+
   clData->buf_dens_prev = clCreateBuffer(clData->clMgr.getContext(), CL_MEM_READ_WRITE,
                                         sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
@@ -171,6 +190,7 @@ void allocate_cl_buffers(CLData *clData)
                                    sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
 
+#endif
    
   clData->buf_pressure_prev = clCreateBuffer(clData->clMgr.getContext(), CL_MEM_READ_WRITE,
                                    sizeof(float) * clData->n, 0, &clData->status);

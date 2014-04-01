@@ -40,7 +40,7 @@ class OpenCLManager
     void createContext(const char *plat_name, const char* dev_name, cl_uint idx,
                       int enable_profiling);
 
-    void createContextForOpenGLOSX();
+    //void createContextForOpenGLOSX();
 
     inline cl_device_id getDeviceID(){ return _device;};
     inline cl_context getContext(){ return _context;};

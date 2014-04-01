@@ -78,7 +78,7 @@ int vorticity;
 int useCG;
 
 //OpenGL buffers to replace the opencl arrays
-unsigned int gl_tex3d_dens, gl_tex3d_dens_prev;
+//unsigned int gl_tex3d_dens, gl_tex3d_dens_prev;
 unsigned int gl_tex2d_dens;
 float * g_dens_slice;
 
@@ -98,7 +98,9 @@ void init_opencl()
   clData.clMgr.createContext("Apple", "Intel", 0, 0);
 //  OpenCLUtil::createContextOn("Apple", "Intel", 0, &clData.ctx, &clData.clMgr.getQueue(), 0);
 #else
-  clData.clMgr.createContext("Apple", "Intel", 0, 0);
+  //clData.clMgr.createContext("Apple", "Intel", 0, 0);
+  clData.clMgr.createContext("Apple", "GeForce", 0, 0);
+
   //OpenCLUtil::createContextOn("Apple", "GeForce", 0, &clData.ctx, &clData.clMgr.getQueue(), 0);
 #endif
 #endif
@@ -113,8 +115,11 @@ void init_opencl()
 void transfer_buffers_to_gpu()
 {
    transfer_cl_float_buffer_to_device(&clData,clData.buf_divergence,g_divergence,clData.n,true);
+#if USE_OPENGL_DATA
+#else
    transfer_cl_float_buffer_to_device(&clData,clData.buf_dens,g_dens,clData.n,true);
    transfer_cl_float_buffer_to_device(&clData,clData.buf_dens_prev,g_dens_prev,clData.n,true);
+#endif
    transfer_cl_float_buffer_to_device(&clData,clData.buf_u_prev,g_u_prev,clData.n,true);
    transfer_cl_float_buffer_to_device(&clData,clData.buf_v_prev,g_v_prev,clData.n,true);
    transfer_cl_float_buffer_to_device(&clData,clData.buf_w_prev,g_w_prev,clData.n,true);
@@ -135,7 +140,10 @@ void transfer_buffers_to_gpu()
 void transfer_buffers_to_cpu()
 {
    transfer_cl_float_buffer_from_device(&clData,clData.buf_divergence,g_divergence,clData.n,true);
+#if USE_OPENGL_DATA
+#else
    transfer_cl_float_buffer_from_device(&clData,clData.buf_dens,g_dens,clData.n,true);
+#endif
    transfer_cl_float_buffer_from_device(&clData,clData.buf_u_prev,g_u_prev,clData.n,true);
    transfer_cl_float_buffer_from_device(&clData,clData.buf_v_prev,g_v_prev,clData.n,true);
    transfer_cl_float_buffer_from_device(&clData,clData.buf_w_prev,g_w_prev,clData.n,true);
@@ -941,12 +949,15 @@ void testCG(){
 
 static void test_opencl_opengl_interop()
 {
+  return;
+  /*
   cl_int status;
   
   clData.clMgr.createContextForOpenGLOSX();
   if(OpenCLUtil::doesDeviceSupportOpenGLSharing(clData.clMgr)){
     printf("Device supports OpenGL Sharing!\n");
   }
+  */
 }
 
 void run_opencl_test(){
@@ -988,6 +999,26 @@ void run_opencl_test(){
   
 }
 
+void init_opengl_opencl_shared_buffers()
+{
+   cl_int err_code;
+   cl_mem shared_dens_buff =  clCreateFromGLTexture(clData.clMgr.getContext(),CL_MEM_READ_WRITE,GL_TEXTURE_3D,0,clData.gl_tex3d_dens,&err_code);
+
+   if(err_code != CL_SUCCESS){
+     printf("There was an error sharing the GL_TEXTURE_3D with OpenCL\n");
+   }else{
+     printf("Sharing gl_tex3d_dens with opencl!\n");
+   }
+
+   cl_mem shared_dens_prev_buff =  clCreateFromGLTexture(clData.clMgr.getContext(),CL_MEM_READ_WRITE,GL_TEXTURE_3D,0,clData.gl_tex3d_dens_prev,&err_code);
+
+   if(err_code != CL_SUCCESS){
+     printf("There was an error sharing the GL_TEXTURE_3D with OpenCL\n");
+   }else{
+     printf("Sharing gl_tex3d_dens_prev with opencl!\n");
+   }
+}
+
 void init ( )
 {
   //testCG();
@@ -997,7 +1028,7 @@ void init ( )
          glGetString(GL_VERSION)    // e.g. 3.2 INTEL-8.0.61
          );
   
-  test_opencl_opengl_interop();
+  //test_opencl_opengl_interop();
   
   
   dt = 0.1f;
@@ -1039,7 +1070,6 @@ void init ( )
   
 
 
-
 //OpenCLUtil::printPlatformDevices();
 //  run_opencl_test();
   
@@ -1048,21 +1078,15 @@ void init ( )
   
 #if USE_OPENCL
    init_opencl();
+
    load_cl_kernels(&clData);
    allocate_cl_buffers(&clData);
-  
   
    transfer_buffers_to_gpu();
    
    flush_cl_queue();
 #endif
    
-   
-  
-
-
-
-  
 }
 
 
@@ -1194,17 +1218,6 @@ void loadQuad()
 
 
    //for now putting texture setup here
-   glEnable(GL_TEXTURE_3D);
-   glGenTextures(1,&gl_tex3d_dens);
-   glActiveTexture(GL_TEXTURE1);
-   glBindTexture(GL_TEXTURE_3D, gl_tex3d_dens);
-   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
-   glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, NX, NY, NZ, 0, GL_RGBA, GL_FLOAT, NULL);
-
    glGenTextures(1,&gl_tex2d_dens);
    glActiveTexture(GL_TEXTURE0);
    glBindTexture(GL_TEXTURE_2D, gl_tex2d_dens);
@@ -1269,6 +1282,32 @@ void drawQuad(glm::mat4& mat)
     //GLUtil::checkGLErrors();
 }
 
+void loadSharedOpenGLMemory()
+{
+    //for now putting texture setup here
+   glEnable(GL_TEXTURE_3D);
+   glGenTextures(1,&clData.gl_tex3d_dens);
+   glActiveTexture(GL_TEXTURE1);
+   glBindTexture(GL_TEXTURE_3D, clData.gl_tex3d_dens);
+   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
+   glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, NX, NY, NZ, 0, GL_RED, GL_FLOAT, NULL);
+
+   glGenTextures(1,&clData.gl_tex3d_dens_prev);
+   glActiveTexture(GL_TEXTURE2);
+   glBindTexture(GL_TEXTURE_3D, clData.gl_tex3d_dens_prev);
+   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
+   glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, NX, NY, NZ, 0, GL_RED, GL_FLOAT, NULL);
+
+}
+
 int main(void)
 {
   win_x = 512;
@@ -1291,17 +1330,20 @@ int main(void)
   glfwSetCursorPosCallback(window, mouse_position_callback);
 
   //std::cout << GLUtil::getOpenGLInfo() << std::endl;std::cout.flush();
-
-  init();
-  
   //Test stuff from draw quad
   std::cout << GLUtil::getOpenGLInfo() << std::endl;std::cout.flush();
+
+  loadSharedOpenGLMemory();
+
+  init();
+
   program1.loadShaders("vertShader.glsl","fragShader.glsl","");
   loadQuad();
 
   glm::mat4 identityMatrix = glm::mat4(1.0);//Identity matrix
 
   program1.enableVertexAttributes();
+
 
   kdslib::GLHelper glHelper;
   printf("Testing glHelper: %s\n",glHelper.glEnumToString(GL_STREAM_DRAW).c_str());

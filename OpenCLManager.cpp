@@ -22,7 +22,7 @@ void OpenCLManager::createContext(const char *plat_name, const char*dev_name, cl
   CALL_CL_GUARDED(clGetCommandQueueInfo, (_commandQueue, CL_QUEUE_DEVICE, sizeof(_device), &_device, NULL));
 
 }
-
+/*
 void OpenCLManager::createContextForOpenGLOSX()
 {
   cl_int status;
@@ -59,3 +59,4 @@ void OpenCLManager::createContextForOpenGLOSX()
   _commandQueue = clCreateCommandQueue(_context, _device, qprops, &status);
   CHECK_CL_ERROR(status, "clCreateCommandQueue");
 } 
+*/

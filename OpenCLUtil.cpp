@@ -320,6 +320,7 @@ void OpenCLUtil::createContextOn(const char *plat_name, const char*dev_name, cl_
             clGetGLContextInfoAPPLE(*ctx, gl_context,
                                     CL_CGL_DEVICE_FOR_CURRENT_VIRTUAL_SCREEN_APPLE, sizeof(dev),
                                     &dev, NULL);
+            printf("CREATED OPENGL COMPATIBLE OPENCL CONTEXT!!!!\n");
             
             
             

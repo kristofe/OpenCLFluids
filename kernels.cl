@@ -163,6 +163,88 @@ __kernel void advect_forward_euler(
   
 }
 
+__kernel void advectRK2_NEW(
+            const float delta_time,
+            int3  dims,
+            const float H,
+            __write_only image3d_t q,
+            __read_only image3d_t  q_prev,
+            __global float * u_prev,
+            __global float * v_prev,
+            __global float * w_prev
+//            __global float4 * debugData1,
+//            __global float4 * debugData2,
+//            __global float4 * debugData3
+                        )
+{
+  //Used to access image with integer coords and linear interp sampling
+  const sampler_t lerpSampler = CLK_NORMALIZED_COORDS_TRUE |
+                           CLK_ADDRESS_CLAMP_TO_EDGE        |
+                           CLK_FILTER_LINEAR;
+  int id = get_global_id(0);
+  
+  
+	float dt = -delta_time*NX;
+  
+  int slice_size = NX*NY;
+  int row_size = NX;
+  int k = id / slice_size;
+  int j = (id - k*slice_size) / row_size;
+  int i = id - j*row_size - k*slice_size;
+  
+  float3 pos = {i*H, j*H, k*H};
+  float3 orig_vel = {u_prev[IX(i,j,k)],v_prev[IX(i,j,k)],w_prev[IX(i,j,k)]};
+  
+  
+  //RK2
+  // What is u(x)?  value(such as velocity) at x i guess
+  //y = x + dt*u(x + (dt/2)*u(x))
+  
+  //backtrace based upon current velocity at cell center.
+  float halfDT = 0.5f*dt;
+  float3 halfway_position = {
+    pos.x+(halfDT*orig_vel.x),
+    pos.y+(halfDT*orig_vel.y),
+    pos.z+(halfDT*orig_vel.z)
+  };
+  
+#if !WRAP_BOUNDS
+  halfway_position.x  = clamp(halfway_position.x,0.0f,NX-1.0f);
+  halfway_position.y  = clamp(halfway_position.y,0.0f,NY-1.0f);
+  halfway_position.z  = clamp(halfway_position.z,0.0f,NZ-1.0f);
+#endif
+  
+  float3 halfway_vel;
+  halfway_vel.x = get_interpolated_value(u_prev, halfway_position,H);
+  halfway_vel.y = get_interpolated_value(v_prev, halfway_position,H);
+  halfway_vel.z = get_interpolated_value(w_prev, halfway_position,H);
+  
+  float3 backtraced_position;
+  backtraced_position.x  = pos.x + dt*halfway_vel.x;
+  backtraced_position.y  = pos.y + dt*halfway_vel.y;
+  backtraced_position.z  = pos.z + dt*halfway_vel.z;
+  
+  
+#if !WRAP_BOUNDS
+  backtraced_position.x  = clamp(backtraced_position.x,0.0f,NX-1.0f);
+  backtraced_position.y  = clamp(backtraced_position.y,0.0f,NY-1.0f);
+  backtraced_position.z  = clamp(backtraced_position.z,0.0f,NZ-1.0f);
+#endif
+  
+  
+  //Have to interpolate at new point
+  float traced_q;
+  //traced_q = get_interpolated_value(q_prev, backtraced_position,H);
+  traced_q = read_imagef(q_prev, lerpSampler,(backtraced_position/dims).xyzz).x;
+  
+  //Has to be set on u
+  //q[IX(i,j,k)] = traced_q;
+  int4 coord = int4(k,j,i,0);
+  write_imagef(q,coord,traced_q);
+
+	//}
+}
+
 
 
 __kernel void advectRK2(
