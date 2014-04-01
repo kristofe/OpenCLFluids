@@ -59,7 +59,3 @@ void OpenCLManager::createContextForOpenGLOSX()
   _commandQueue = clCreateCommandQueue(_context, _device, qprops, &status);
   CHECK_CL_ERROR(status, "clCreateCommandQueue");
 } 
-  
-
-  
-  

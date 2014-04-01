@@ -274,7 +274,7 @@ void GLUtil::getActiveAttributes(
 
 std::string GLUtil::getShaderSource(const std::string& filename)
 {
-  std::cout << "trying to read " << filename << std::endl; std::cout.flush();
+  //std::cout << "trying to read " << filename << std::endl; std::cout.flush();
   std::ifstream in(filename.c_str(), std::ios::in | std::ios::binary);
   if (in)
   {
@@ -284,7 +284,7 @@ std::string GLUtil::getShaderSource(const std::string& filename)
     in.seekg(0, std::ios::beg);
     in.read(&contents[0], contents.size());
     in.close();
-    std::cout << filename << std::endl << contents << std::endl; std::cout.flush();
+    //std::cout << filename << std::endl << contents << std::endl; std::cout.flush();
     return(contents);
   }
   return "";

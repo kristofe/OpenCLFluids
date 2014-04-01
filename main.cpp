@@ -103,6 +103,7 @@ void init_opencl()
 #endif
 #endif
   
+  OpenCLUtil::printDeviceInfo(clData.clMgr.getDeviceID());
   //Not needed anymore - in clMgr
   //set_device_id(&clData);
   
@@ -1193,6 +1194,16 @@ void loadQuad()
 
 
    //for now putting texture setup here
+   glEnable(GL_TEXTURE_3D);
+   glGenTextures(1,&gl_tex3d_dens);
+   glActiveTexture(GL_TEXTURE1);
+   glBindTexture(GL_TEXTURE_3D, gl_tex3d_dens);
+   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
+   glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, NX, NY, NZ, 0, GL_RGBA, GL_FLOAT, NULL);
 
    glGenTextures(1,&gl_tex2d_dens);
    glActiveTexture(GL_TEXTURE0);
@@ -1201,7 +1212,6 @@ void loadQuad()
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP);
    for (int i=0 ; i<NX ; i++ ) {
 		for (int j=0 ; j<NY ; j++ ) {
        g_dens_slice[IX(i,j,0)] = i/(float)NX;
@@ -1214,10 +1224,18 @@ void loadQuad()
 
 void drawQuad(glm::mat4& mat)
 {
+    float * arr = g_dens;
+    float scale = 1.0f;
+
+    if(dvel){
+      arr = g_u;// g_pressure;
+      scale = 128.0f;
+    }
    
 		for (int i=0 ; i<NX ; i++ ) {
 			for (int j=0 ; j<NY ; j++ ) {
-        g_dens_slice[IX(i,j,0)] = g_dens[IX(i,j,0)];
+        //g_dens_slice[IX(i,j,0)] = g_dens[IX(i,j,0)];
+        g_dens_slice[IX(i,j,0)] = scale * arr[IX(i,j,0)];
 			}
 		}
    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, NX, NY, 0, GL_RED, GL_FLOAT, g_dens_slice);

@@ -47,6 +47,7 @@ class OpenCLManager
     inline cl_command_queue getQueue(){ return _commandQueue;};
 
 
+
   protected:
     cl_device_id _device;
     cl_context _context;
