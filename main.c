@@ -574,7 +574,7 @@ static void display_func ( void )
 		if ( dvel )
     {
       draw_pressure();
-      draw_velocity ();
+      //draw_velocity ();
     }
 		else
     {
