@@ -143,9 +143,31 @@ ENDIF(WIN32)
 
 if(UNIX AND NOT APPLE)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -std=c++11")
-  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -g -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter")
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -g -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -std=c99")
   add_definitions(-DTARGEUNIX)
+  add_definitions(-D_POSIX_C_SOURCE=199309)
 #  include_directories(source/PlatformClasses/Unix)
+
+  find_package(GLUT REQUIRED)
+  include_directories(${GLUT_INCLUDE_DIRS})
+  link_directories(${GLUT_LIBRARY_DIRS})
+  add_definitions(${GLUT_DEFINITIONS})
+  if(NOT GLUT_FOUND)
+      message(ERROR " GLUT not found!")
+  endif(NOT GLUT_FOUND)
+
+  #find_package(OpenCL REQUIRED)
+  #HACK PATHS
+  SET(OpenCL_INCLUDE_DIRS "/usr/local/cuda/targets/x86_64-linux/include")
+  SET(OpenCL_LIBRARY_DIRS "/usr/local/cuda/targets/x86_64-linux/lib")
+  include_directories(${OpenCL_INCLUDE_DIRS})
+  link_directories(${OpenCL_LIBRARY_DIRS})
+  #add_definitions(${OpenCL_DEFINITIONS})
+  if(NOT OpenCL_FOUND)
+      message(ERROR " OpenCL not found!")
+  endif(NOT OpenCL_FOUND)
+  message("OpenCL include:" ${OpenCL_INCLUDE_DIRS})
+  message("OpenCL lib:" ${OpenCL_LIBRARY_DIRS})
 ENDIF(UNIX AND NOT APPLE)
 
 
