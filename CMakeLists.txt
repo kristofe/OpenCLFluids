@@ -1,0 +1,199 @@
+cmake_minimum_required  (VERSION 2.8)
+
+set(app_name fluids)
+project(${app_name})
+
+#the FILE GLOB commands create lists of files according to the regex and then
+#put them into the variable
+#it is like set(Sources but using patterns
+#FILE(GLOB LIBPNG_SOURCE source/renderlib/libpng/*.c)
+#FILE(GLOB LIBPNG_HEADERS source/renderlib/libpng/*.h)
+FILE(GLOB MAIN_SOURCE *.c)
+FILE(GLOB MAIN_HEADERS *.h)
+
+
+set(SOURCES
+   ${MAIN_SOURCE}
+)
+
+
+set(HEADERS
+  ${MAIN_HEADERS}
+)
+
+
+set(RESOURCES
+)
+
+set(ASSETS
+#    assets/tiles.png
+#    assets/pond_xneg.png
+#    assets/pond_xpos.png
+#    assets/pond_ypos.png
+#    assets/pond_yneg.png
+#    assets/pond_zneg.png
+#    assets/pond_zpos.png
+   )
+#creates folders in the IDE's project explorer.  Better than everything
+#showing up in SOURCE FILES
+#source_group("soil" FILES ${SOIL_SOURCE} ${SOIL_HEADERS})
+
+# -g adds debugging symbols
+# -Wall turns on all warnings
+# -Wextra turns on a lot of warnings (but not too pedantic)
+if(APPLE)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -std=c++11")
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -g -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter")
+  add_definitions(-DTARGETMAC)
+#  include_directories(source/PlatformClasses/Apple/MacClasses)
+#  LIST(APPEND SOURCES source/PlatformClasses/Apple/MacClasses/Platform_Mac.mm)
+#  LIST(APPEND HEADERS source/PlatformClasses/Apple/MacClasses/Platform_Mac.h)
+
+#  link_directories(${CMAKE_CURRENT_SOURCE_DIR}/GLFW) #had to put here because the libs can conflict on linux
+ENDIF(APPLE)
+
+if(WIN32)
+#  include_directories(glew/include)
+#  LIST(APPEND SOURCES source/PlatformClasses/Windows/Platform_Win32.cpp)
+#  LIST(APPEND HEADERS source/PlatformClasses/Windows/Platform_Win32.h)
+#  include_directories(source/PlatformClasses/Windows)
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+  add_definitions(-D_CRT_SECURE_NO_WARNINGS) #disable sprintf deprecation
+#  link_directories(${CMAKE_CURRENT_SOURCE_DIR}/GLFW) #had to put here because the libs can conflict on linux
+ENDIF(WIN32)
+
+#SET(CMAKE_OSX_ARCHITECTURES "i386")
+
+
+
+if(CMAKE_BUILD_TYPE MATCHES DEBUG)
+    message("adding debug flags")
+    add_definitions(-DDEBUG)
+    add_definitions(-D_DEBUG)
+    add_definitions(-DBREAK_ON_EXCEPTION)
+endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+
+
+
+#add_subdirectory(renderlib) #requires the directory to have a CMakeLists.txt file
+#include_directories(source)
+
+
+if(APPLE)
+   FIND_LIBRARY(IOKIT_LIBRARY IOKit)
+   FIND_LIBRARY(COCOA_LIBRARY Cocoa)
+   FIND_LIBRARY(OPENGL_LIBRARY OpenGL)
+   FIND_LIBRARY(CORE_MIDI_LIBRARY CoreMidi)
+
+   MARK_AS_ADVANCED(
+                     IOKIT_LIBRARY
+                     COCOA_LIBRARY
+                     OPENGL_LIBRARY
+                     CORE_MIDI_LIBRARY
+                   )
+  LIST(
+      APPEND
+      EXTRA_LIBS
+      ${IOKIT_LIBRARY}
+      ${COCOA_LIBRARY}
+      ${OPENGL_LIBRARY}
+      ${CORE_MIDI_LIBRARY}
+#libglfw3.a
+      )
+ENDIF(APPLE)
+
+if(WIN32)
+  find_package(OpenGL REQUIRED)
+  include_directories(${OpenGL_INCLUDE_DIRS})
+  link_directories(${OpenGL_LIBRARY_DIRS})
+  add_definitions(${OpenGL_DEFINITIONS})
+  if(NOT OPENGL_FOUND)
+      message(ERROR " OPENGL not found!")
+  endif(NOT OPENGL_FOUND)
+
+  find_package(GLUT REQUIRED)
+  include_directories(${GLUT_INCLUDE_DIRS})
+  link_directories(${GLUT_LIBRARY_DIRS})
+  add_definitions(${GLUT_DEFINITIONS})
+  if(NOT GLUT_FOUND)
+      message(ERROR " GLUT not found!")
+  endif(NOT GLUT_FOUND)
+  
+  find_package(OPENCL REQUIRED)
+  include_directories(${OPENCL_INCLUDE_DIRS})
+  link_directories(${OPENCL_LIBRARY_DIRS})
+  add_definitions(${OPENCL_DEFINITIONS})
+  if(NOT OPENCL_FOUND)
+      message(ERROR " OPENCL not found!")
+  endif(NOT OPENCL_FOUND)
+
+#cmake does not like if you add .lib to the libraries on windows!
+  LIST(
+      APPEND
+      EXTRA_LIBS
+      winmm
+      )
+ENDIF(WIN32)
+
+if(UNIX AND NOT APPLE)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -std=c++11")
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -g -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter")
+  add_definitions(-DTARGEUNIX)
+#  include_directories(source/PlatformClasses/Unix)
+ENDIF(UNIX AND NOT APPLE)
+
+
+#Setting up target and it's properties
+if(APPLE)
+#CREATING A BUNDLE SEEMS TO DISABLE RETINA SUPPORT FOR GLFW!!!!
+#  add_executable(${app_name} MACOSX_BUNDLE ${SOURCES} ${HEADERS} ${SHADERS} ${ASSETS} ${RESOURCES})
+  add_executable(${app_name} ${SOURCES} ${HEADERS} ${SHADERS} ${ASSETS} ${RESOURCES})
+#this is where to put the dylibs
+  SET_SOURCE_FILES_PROPERTIES(
+
+      PROPERTIES
+      MACOSX_PACKAGE_LOCATION MacOSX
+      )
+#you have to mark each file as a resource
+  foreach( rez ${RESOURCES} )
+    message(${rez})
+    SET_TARGET_PROPERTIES(${APP_NAME} PROPERTIES RESOURCE "${rez}")
+  endforeach( rez )
+  message("RESOURCES: " ${RESOURCES})
+
+#  foreach( shader ${SHADERS} )
+#    message(${shader})
+#    SET_TARGET_PROPERTIES(${APP_NAME} PROPERTIES RESOURCE "${shader}")
+#  endforeach( shader )
+#  message("Shaders: " ${SHADERS})
+
+  foreach( asset ${ASSETS} )
+    message(${asset})
+    SET_TARGET_PROPERTIES(${APP_NAME} PROPERTIES RESOURCE "${asset}")
+  endforeach( asset )
+
+#this is where to put the resources
+  message("Resources: " ${RESOURCES})
+  SET_SOURCE_FILES_PROPERTIES(
+      ${RESOURCES}
+      PROPERTIES
+      MACOSX_PACKAGE_LOCATION Resources
+      )
+  message("Assets: " ${ASSETS})
+  SET_SOURCE_FILES_PROPERTIES(
+      ${ASSETS}
+      PROPERTIES
+      MACOSX_PACKAGE_LOCATION Resources/assets
+      )
+#  SET_SOURCE_FILES_PROPERTIES(
+#      ${SHADERS}
+#      PROPERTIES
+#      MACOSX_PACKAGE_LOCATION Resources/Shaders
+#      )
+else()
+  #add_executable(${app_name} ${SOURCES} ${HEADERS} ${SHADERS} ${RESOURCES})
+  message("Sources:" $SOURCES})
+  add_executable(${app_name} ${SOURCES})
+endif(APPLE)
+
+#target_link_libraries(${app_name} ${EXTRA_LIBS})
