@@ -918,6 +918,7 @@ void testCG(){
 
 static void test_opencl_opengl_interop()
 {
+#ifdef __APPLE__
   cl_int status;
   
   CGLContextObj gl_context = CGLGetCurrentContext();
@@ -976,7 +977,7 @@ static void test_opencl_opengl_interop()
     pch = strtok (NULL, " ");
   }
   
-  
+#endif 
   
 }
 

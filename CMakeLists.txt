@@ -145,7 +145,7 @@ if(UNIX AND NOT APPLE)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -std=c++11")
   SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -g -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -std=c99")
   add_definitions(-DTARGEUNIX)
-  add_definitions(-D_POSIX_C_SOURCE=199309)
+  add_definitions(-D_POSIX_C_SOURCE=199309) #To get timing.h to include <time.h>
 #  include_directories(source/PlatformClasses/Unix)
 
   find_package(GLUT REQUIRED)
