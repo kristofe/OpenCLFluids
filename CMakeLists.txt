@@ -168,9 +168,14 @@ if(UNIX AND NOT APPLE)
   endif(NOT GLUT_FOUND)
 
   #find_package(OpenCL REQUIRED)
-  #HACK PATHS
-  SET(OPENCL_INCLUDE_DIRS "/usr/local/cuda/targets/x86_64-linux/include")
-  SET(OPENCL_LIBRARY_DIRS "/usr/local/cuda/targets/x86_64-linux/lib/")
+  #HACK PATHS - Home machine has targets dir. School doesn't
+  if(EXISTS "/usr/local/cuda/lib64/libOpenCL.so")
+    SET(OPENCL_INCLUDE_DIRS "/usr/local/cuda/include")
+    SET(OPENCL_LIBRARY_DIRS "/usr/local/cuda/lib64/")
+  else()
+    SET(OPENCL_INCLUDE_DIRS "/usr/local/cuda/targets/x86_64-linux/include")
+    SET(OPENCL_LIBRARY_DIRS "/usr/local/cuda/targets/x86_64-linux/lib/")
+  endif()
   include_directories(${OPENCL_INCLUDE_DIRS})
   link_directories(${OpenCL_LIBRARY_DIRS})
   #add_definitions(${OpenCL_DEFINITIONS})
