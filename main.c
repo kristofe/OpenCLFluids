@@ -4,8 +4,8 @@
 #define RUN_TIMINGS 0
 
 //GRID DIMENSIONS
-#define NX 128
-#define NY 128
+#define NX 64
+#define NY 64
 #define NZ 1
 #define H  1.0f
 
@@ -574,7 +574,7 @@ static void display_func ( void )
 		if ( dvel )
     {
       draw_pressure();
-      //draw_velocity ();
+      draw_velocity ();
     }
 		else
     {
