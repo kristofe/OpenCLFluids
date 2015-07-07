@@ -728,7 +728,7 @@ void print_device_info(cl_device_id device)
   }
 
   {
-    size_t size;
+    size_t size = sizeof(size_t);
     CALL_CL_GUARDED(clGetDeviceInfo,
         (device, CL_DEVICE_MAX_WORK_ITEM_SIZES, 0, 0, &size));
 

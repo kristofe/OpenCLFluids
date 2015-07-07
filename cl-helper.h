@@ -40,7 +40,7 @@
   #include <OpenCL/cl_gl_ext.h>
   #include <OpenGL/CGLDevice.h>
 #else
-#include <CL/cl.h>
+#include <CL/opencl.h>
 #endif
 
 /* An error check macro for OpenCL.

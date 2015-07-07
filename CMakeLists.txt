@@ -53,6 +53,8 @@ if(APPLE)
 ENDIF(APPLE)
 
 if(WIN32)
+  include_directories(freeglut/include)
+  link_directories(${CMAKE_CURRENT_SOURCE_DIR}/freeglut/lib) 
 #  include_directories(glew/include)
 #  LIST(APPEND SOURCES source/PlatformClasses/Windows/Platform_Win32.cpp)
 #  LIST(APPEND HEADERS source/PlatformClasses/Windows/Platform_Win32.h)
@@ -111,28 +113,32 @@ if(WIN32)
       message(ERROR " OPENGL not found!")
   endif(NOT OPENGL_FOUND)
 
-  find_package(GLUT REQUIRED)
-  include_directories(${GLUT_INCLUDE_DIRS})
-  link_directories(${GLUT_LIBRARY_DIRS})
-  add_definitions(${GLUT_DEFINITIONS})
-  if(NOT GLUT_FOUND)
-      message(ERROR " GLUT not found!")
-  endif(NOT GLUT_FOUND)
-  
-  find_package(OPENCL REQUIRED)
-  include_directories(${OPENCL_INCLUDE_DIRS})
-  link_directories(${OPENCL_LIBRARY_DIRS})
-  add_definitions(${OPENCL_DEFINITIONS})
-  if(NOT OPENCL_FOUND)
-      message(ERROR " OPENCL not found!")
-  endif(NOT OPENCL_FOUND)
+  #find_package(GLUT REQUIRED)
+  #include_directories(${GLUT_INCLUDE_DIRS})
+  #link_directories(${GLUT_LIBRARY_DIRS})
+  #add_definitions(${GLUT_DEFINITIONS})
+  #if(NOT GLUT_FOUND)
+  #    message(ERROR " GLUT not found!")
+  #endif(NOT GLUT_FOUND)
+
+  find_package(OpenCL REQUIRED)
+  include_directories(${OpenCL_INCLUDE_DIRS})
+  link_directories(${OpenCL_LIBRARY_DIRS})
+  add_definitions(${OpenCL_DEFINITIONS})
+  if(NOT OpenCL_FOUND)
+      message(ERROR " OpenCL not found!")
+  endif(NOT OpenCL_FOUND)
+  message("OpenCL include:" ${OpenCL_INCLUDE_DIRS})
+  message("OpenCL lib:" ${OpenCL_LIBRARY_DIRS})
 
 #cmake does not like if you add .lib to the libraries on windows!
   LIST(
       APPEND
       EXTRA_LIBS
       winmm
+      freeglut
       )
+  set (CMAKE_C_STANDARD 99)
 ENDIF(WIN32)
 
 if(UNIX AND NOT APPLE)
@@ -192,8 +198,8 @@ if(APPLE)
 #      )
 else()
   #add_executable(${app_name} ${SOURCES} ${HEADERS} ${SHADERS} ${RESOURCES})
-  message("Sources:" $SOURCES})
+  message("Sources:" ${SOURCES})
   add_executable(${app_name} ${SOURCES})
 endif(APPLE)
 
-#target_link_libraries(${app_name} ${EXTRA_LIBS})
+target_link_libraries(${app_name} ${EXTRA_LIBS})
