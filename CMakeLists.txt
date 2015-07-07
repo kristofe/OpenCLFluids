@@ -54,7 +54,7 @@ ENDIF(APPLE)
 
 if(WIN32)
   include_directories(freeglut/include)
-  link_directories(${CMAKE_CURRENT_SOURCE_DIR}/freeglut/lib) 
+  link_directories(${CMAKE_CURRENT_SOURCE_DIR}/freeglut/lib)
 #  include_directories(glew/include)
 #  LIST(APPEND SOURCES source/PlatformClasses/Windows/Platform_Win32.cpp)
 #  LIST(APPEND HEADERS source/PlatformClasses/Windows/Platform_Win32.h)
@@ -187,7 +187,7 @@ if(UNIX AND NOT APPLE)
       APPEND
       EXTRA_LIBS
       m
-      ${OPENGL_LIBRARY} 
+      ${OPENGL_LIBRARY}
       ${GLUT_LIBRARY}
       OpenCL
       )
@@ -244,7 +244,7 @@ if(APPLE)
 else()
   #add_executable(${app_name} ${SOURCES} ${HEADERS} ${SHADERS} ${RESOURCES})
   message("Sources:" ${SOURCES})
-  add_executable(${app_name} ${SOURCES})
+  add_executable(${app_name} ${SOURCES} ${HEADERS})
 endif(APPLE)
 
 target_link_libraries(${app_name} ${EXTRA_LIBS})

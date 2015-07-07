@@ -1,0 +1,14 @@
+Install the latest qt creator from:
+wget http://download.qt-project.org/official_releases/qt/5.3/5.3.1/qt-opensource-linux-x64-5.3.1.run
+
+chmod +x qt-opensource-linux-x64-5.3.1.run
+
+./qt-opensource-linux-x64-5.3.1.run
+
+now update your system so you can debug:
+Go to the location /etc with root privilege.
+
+Find the file rc.local.
+
+Open it in a text editor like gedit and add the following code there
+echo 0 | tee /proc/sys/kernel/yama/ptrace_scope
