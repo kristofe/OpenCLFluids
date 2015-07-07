@@ -148,6 +148,17 @@ if(UNIX AND NOT APPLE)
   add_definitions(-D_POSIX_C_SOURCE=199309) #To get timing.h to include <time.h>
 #  include_directories(source/PlatformClasses/Unix)
 
+###############################################
+#THESE HAD TO BE ALL CAPS TO WORK
+###############################################
+  find_package(OpenGL REQUIRED)
+  include_directories(${OpenGL_INCLUDE_DIRS})
+  link_directories(${OpenGL_LIBRARY_DIRS})
+  add_definitions(${OpenGL_DEFINITIONS})
+  if(NOT OPENGL_FOUND)
+      message(ERROR " OPENGL not found!")
+  endif(NOT OPENGL_FOUND)
+
   find_package(GLUT REQUIRED)
   include_directories(${GLUT_INCLUDE_DIRS})
   link_directories(${GLUT_LIBRARY_DIRS})
@@ -158,16 +169,23 @@ if(UNIX AND NOT APPLE)
 
   #find_package(OpenCL REQUIRED)
   #HACK PATHS
-  SET(OpenCL_INCLUDE_DIRS "/usr/local/cuda/targets/x86_64-linux/include")
-  SET(OpenCL_LIBRARY_DIRS "/usr/local/cuda/targets/x86_64-linux/lib")
-  include_directories(${OpenCL_INCLUDE_DIRS})
+  SET(OPENCL_INCLUDE_DIRS "/usr/local/cuda/targets/x86_64-linux/include")
+  SET(OPENCL_LIBRARY_DIRS "/usr/local/cuda/targets/x86_64-linux/lib/")
+  include_directories(${OPENCL_INCLUDE_DIRS})
   link_directories(${OpenCL_LIBRARY_DIRS})
   #add_definitions(${OpenCL_DEFINITIONS})
-  if(NOT OpenCL_FOUND)
+  if(NOT OPENCL_FOUND)
       message(ERROR " OpenCL not found!")
-  endif(NOT OpenCL_FOUND)
-  message("OpenCL include:" ${OpenCL_INCLUDE_DIRS})
-  message("OpenCL lib:" ${OpenCL_LIBRARY_DIRS})
+  endif(NOT OPENCL_FOUND)
+
+  LIST(
+      APPEND
+      EXTRA_LIBS
+      m
+      ${OPENGL_LIBRARY} 
+      ${GLUT_LIBRARY}
+      OpenCL
+      )
 ENDIF(UNIX AND NOT APPLE)
 
 
