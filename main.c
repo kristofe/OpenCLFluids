@@ -47,17 +47,19 @@
 float dt;
 float force, source;
 int dvel;
+int dobs;
 
 float * g_u, * g_v, * g_w, * g_u_prev, * g_v_prev, * g_w_prev;
 float * g_dens, * g_dens_prev;
 float * g_heat, * g_heat_prev;
 float * g_curl;
-float * g_obs;
 float * g_compressibility;
 float * g_divergence;
 float * g_pressure, *g_pressure_prev;
 float * g_laplacian_matrix;
 float * g_cg_r, *g_cg_d, *g_cg_q;
+
+int * g_obs;
 
 int win_id;
 int win_x, win_y;
@@ -107,10 +109,9 @@ void transfer_buffers_to_gpu()
    transfer_cl_float_buffer_to_device(&clData,clData.buf_w,g_w,clData.n,true);
    transfer_cl_float_buffer_to_device(&clData,clData.buf_pressure,g_pressure,clData.n,true);
    transfer_cl_float_buffer_to_device(&clData,clData.buf_pressure_prev,g_pressure_prev,clData.n,true);
-   transfer_cl_float_buffer_to_device(&clData,clData.buf_obs,g_obs,clData.n,true);
 
 
-   //transfer_cl_int_buffer_to_device(&clData,clData.buf_dims,dims,3,true);
+   transfer_cl_int_buffer_to_device(&clData,clData.buf_obs,g_obs,clData.n,true);
 
 //   transfer_cl_float_buffer_to_device(&clData,clData.buf_debug_data1,clData.debug_data1,clData.dn*clData.n,true);
 //   transfer_cl_float_buffer_to_device(&clData,clData.buf_debug_data2,clData.debug_data2,clData.dn*clData.n,true);
@@ -176,7 +177,7 @@ static void clear_data ( void )
         g_u[i] = g_v[i] = g_w[i] = g_u_prev[i] = g_v_prev[i] = g_w_prev[i] =
             g_dens[i] = g_dens_prev[i] = g_curl[i] =
             g_heat[i] = g_heat_prev[i] = g_compressibility[i] =
-            g_divergence[i] = g_pressure[i] = g_pressure_prev[i]  g_obs[i]= 0.0f;
+            g_divergence[i] = g_pressure[i] = g_pressure_prev[i] = 0.0f;
     }
 
   //memset(g_laplacian_matrix,0.0f, sizeof(float)*size*size);
@@ -203,14 +204,14 @@ static int allocate_data ( void )
     g_pressure		= (float *) malloc ( size*sizeof(float) );
     g_pressure_prev	= (float *) malloc ( size*sizeof(float) );
     g_compressibility =  (float *) malloc ( size*sizeof(float) );
-    g_obs   		= (float *) malloc ( size*sizeof(float) );
+    g_obs   		= (int *) calloc ( size,sizeof(int) );
 
   g_cg_r =  (float *) malloc ( size*sizeof(float) );
     g_cg_d =  (float *) malloc ( size*sizeof(float) );
     g_cg_q =  (float *) malloc ( size*sizeof(float) );
 
     if ( !g_u || !g_v || !g_u_prev || !g_v_prev || !g_dens || !g_dens_prev || !g_curl || !g_compressibility
-        || !g_pressure || !g_pressure_prev || !g_divergence || g_obs) {
+        || !g_pressure || !g_pressure_prev || !g_divergence || !g_obs) {
         fprintf ( stderr, "cannot allocate data\n" );
         return ( 0 );
     }
@@ -333,6 +334,36 @@ static void draw_density ( void )
 
     glEnd ();
 }
+
+static void draw_obstacles ( void )
+{
+    int i, j;
+    float x, y, h, d00, d01, d10, d11;
+
+    h = 1.0f/NX;
+
+    glBegin ( GL_QUADS );
+
+        for ( i=0 ; i<NX ; i++ ) {
+            x = (i-0.0f)*h;
+            for ( j=0 ; j<NY ; j++ ) {
+                y = (j-0.0f)*h;
+
+                int v = get_int_data(g_obs, i, j, 0);
+                if(v == 0) continue;
+                d00 = 255.0f *v;
+
+
+                glColor3f ( 0, d00, d00 );
+                glVertex2f ( x, y );
+                glVertex2f ( x+h/2, y );
+                glVertex2f ( x+h/2,  y+h/2 );
+                glVertex2f ( x, y+h/2 );
+            }
+        }
+
+    glEnd ();
+}
 /*
   ----------------------------------------------------------------------
    relates mouse movements to forces sources
@@ -422,6 +453,11 @@ static void key_func ( unsigned char key, int x, int y )
         case 'v':
         case 'V':
             dvel = !dvel;
+            break;
+
+        case 'b':
+        case 'B':
+            dobs = !dobs;
             break;
 
         case 's':
@@ -538,7 +574,7 @@ static void idle_func ( void )
         }
 
     //project(dt,g_u,g_v, g_w, g_divergence, g_pressure, g_pressure_prev);
-    project(dt,g_u,g_v, g_w, g_divergence, g_pressure, g_pressure_prev, g_laplacian_matrix,g_cg_r, g_cg_d, g_cg_q,useCG);
+    project(dt,g_u,g_v, g_w, g_divergence, g_pressure, g_pressure_prev, g_laplacian_matrix,g_cg_r, g_cg_d, g_cg_q,g_obs,useCG);
 
 
         advectRK2(dt,g_dens,g_dens_prev, g_u, g_v, g_w);
@@ -574,7 +610,7 @@ static void display_func ( void )
 
 
 
-        if ( dvel )
+    if ( dvel )
     {
       draw_pressure();
       draw_velocity ();
@@ -582,6 +618,11 @@ static void display_func ( void )
         else
     {
       draw_density ();
+    }
+
+    if ( dobs )
+    {
+      draw_obstacles();
     }
 
     post_display ();
@@ -792,7 +833,7 @@ void runTimings(){
   get_timestamp(&time1);
   for(int i = 0; i < ntrips; ++i)
   {
-    pressure_solve(g_pressure,g_pressure_prev, g_divergence, dt);
+    pressure_solve(g_pressure,g_pressure_prev, g_divergence, g_obs, dt);
   }
   get_timestamp(&time2);
   projectJacobiTimeCPU = timestamp_diff_in_seconds(time1,time2)/ntrips;
@@ -1079,6 +1120,7 @@ int main ( int argc, char ** argv )
     printf ( "\t Quit by pressing the 'q' key\n" );
 
     dvel = 0;
+    dobs = 0;
 
     step = 0;
     maccormack = 0;
@@ -1112,6 +1154,22 @@ int main ( int argc, char ** argv )
     copy_grid(g_v_prev, g_v);
 
   g_dens_prev[IX(16,3,0)] = 10.0f;
+
+
+
+  //setup obstacles
+  const int ww = NX*0.125;
+  const int hh = NY*0.125;
+  int left = NX/2 - ww/2;
+  int right = NX/2 + ww/2/2;
+  int top = NY/2 + hh/2;
+  int bottom = NY/2 - hh/2;
+  FOR_EACH_CELL
+  {
+    if(i > left  && i < right  && j > bottom && j < top)
+      g_obs[IX(i,j,0)] = 1;
+  }
+
   //g_u_prev[IX(16,3,0)] = 10.0f;
 
     /*
