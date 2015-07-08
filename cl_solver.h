@@ -32,7 +32,7 @@ typedef struct CLData {
   cl_kernel zero_pressure_kernel;
   cl_kernel laplacian_mtx_vec_mult_kernel;
   cl_kernel vector_dot_product_kernel;
-  
+
   cl_mem buf_u;
   cl_mem buf_v;
   cl_mem buf_w;
@@ -46,29 +46,30 @@ typedef struct CLData {
   cl_mem buf_divergence;
   cl_mem buf_cg_q;
   cl_mem buf_cg_d;
- 
+  cl_mem buf_obs;
+
   cl_mem buf_debug_data1;
   cl_mem buf_debug_data2;
   cl_mem buf_debug_data3;
-  
+
   cl_int status;
-  
+
 //  float *debug_data1;
 //  float *debug_data2;
 //  float *debug_data3;
-//  
+//
   float h;
   int n;
   int dn;
   int dims[3];
-  
+
 } CLData;
 
 void set_device_id(CLData * clData){
   cl_device_id dev;
   CALL_CL_GUARDED(clGetCommandQueueInfo,
                   (clData->queue, CL_QUEUE_DEVICE, sizeof dev, &dev, NULL));
-  
+
   clData->device = dev;
 }
 
@@ -83,7 +84,7 @@ void init_cl_data(CLData * clData, float h, int n, int dn, int nx, int ny, int n
 //  clData->debug_data1 = (float*)malloc(sizeof(float)*n*dn);
 //  clData->debug_data2 = (float*)malloc(sizeof(float)*n*dn);
 //  clData->debug_data3 = (float*)malloc(sizeof(float)*n*dn);
-  
+
 }
 
 cl_kernel load_single_cl_kernel(CLData *clData, const char* filename, const char* kernel_name)
@@ -100,7 +101,7 @@ cl_kernel load_single_cl_kernel(CLData *clData, const char* filename, const char
 void load_cl_kernels(CLData *clData)
 {
 
-  clData->advect_density_kernel = 
+  clData->advect_density_kernel =
                      load_single_cl_kernel(clData,"kernels.cl","advectRK2");
 
 //  clData->advect_velocity_kernel =
@@ -108,7 +109,7 @@ void load_cl_kernels(CLData *clData)
 
   clData->advect_velocity_kernel =
                      load_single_cl_kernel(clData,"kernels.cl","advect_velocity_RK2");
-  
+
   clData->vorticity_confinement_kernel =
                      load_single_cl_kernel(clData,"kernels.cl","vorticity_confinement");
 
@@ -120,26 +121,26 @@ void load_cl_kernels(CLData *clData)
                      load_single_cl_kernel(clData,"kernels.cl","calculate_divergence");
   clData->zero_pressure_kernel =
                      load_single_cl_kernel(clData,"kernels.cl","zero_pressure");
-  
+
   clData->laplacian_mtx_vec_mult_kernel =
                      load_single_cl_kernel(clData,"kernels.cl","laplacian_mtx_vec_mult");
   clData->vector_dot_product_kernel =
                      load_single_cl_kernel(clData,"kernels.cl","vector_dot_product");
-  
+
 }
 
 
 void allocate_cl_buffers(CLData *clData)
 {
- 
+
   clData->buf_u = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
                                      sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
-  
+
   clData->buf_v = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
                                      sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
-  
+
   clData->buf_w = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
                                      sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
@@ -147,11 +148,11 @@ void allocate_cl_buffers(CLData *clData)
   clData->buf_u_prev = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
                                      sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
-  
+
   clData->buf_v_prev = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
                                      sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
-  
+
   clData->buf_w_prev = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
                                      sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
@@ -160,12 +161,12 @@ void allocate_cl_buffers(CLData *clData)
   clData->buf_dens_prev = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
                                         sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
-  
+
   clData->buf_dens = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
                                    sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
 
-   
+
   clData->buf_pressure_prev = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
                                    sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
@@ -173,28 +174,28 @@ void allocate_cl_buffers(CLData *clData)
   clData->buf_pressure = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
                                    sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
-   
-   
+
+
   clData->buf_divergence = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
                                    sizeof(float) * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
-  
+
   clData->buf_cg_q = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
                                    sizeof(float) * clData->n, 0, &clData->status);
-  
+
   clData->buf_cg_d = clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
                                    sizeof(float) * clData->n, 0, &clData->status);
-  
+
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
-  
+
   clData->buf_debug_data1= clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
                                          sizeof(float) * clData->dn * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
-  
+
   clData->buf_debug_data2= clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
                                          sizeof(float) * clData->dn * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
-  
+
   clData->buf_debug_data3= clCreateBuffer(clData->ctx, CL_MEM_READ_WRITE,
                                          sizeof(float) * clData->dn * clData->n, 0, &clData->status);
   CHECK_CL_ERROR(clData->status, "clCreateBuffer");
@@ -203,28 +204,28 @@ void allocate_cl_buffers(CLData *clData)
 
 void transfer_cl_float_buffer_to_device(
                                         CLData *clData,
-                                        cl_mem buf, 
-                                        float * memory, 
-                                        int size, 
+                                        cl_mem buf,
+                                        float * memory,
+                                        int size,
                                         cl_bool blocking)
 {
-   CALL_CL_GUARDED(clEnqueueWriteBuffer, ( 
-            clData->queue, 
-            buf, 
-            blocking, 
-            0, 
-            size*sizeof(float), 
-            memory, 
-            0, 
+   CALL_CL_GUARDED(clEnqueueWriteBuffer, (
+            clData->queue,
+            buf,
+            blocking,
+            0,
+            size*sizeof(float),
+            memory,
+            0,
             NULL,
             NULL));
 }
 
 void transfer_cl_int_buffer_to_device(
                                        CLData *clData,
-                                       cl_mem buf, 
-                                       int * memory, 
-                                       int size, 
+                                       cl_mem buf,
+                                       int * memory,
+                                       int size,
                                        cl_bool blocking)
 {
    CALL_CL_GUARDED(clEnqueueWriteBuffer, ( clData->queue, buf, blocking, 0, size*sizeof(int), memory, 0, NULL, NULL));
@@ -233,9 +234,9 @@ void transfer_cl_int_buffer_to_device(
 
 void transfer_cl_float_buffer_from_device(
                                           CLData *clData,
-                                          cl_mem buf, 
-                                          float * memory, 
-                                          int size, 
+                                          cl_mem buf,
+                                          float * memory,
+                                          int size,
                                           cl_bool blocking)
 {
    CALL_CL_GUARDED(clEnqueueReadBuffer, (
@@ -263,7 +264,7 @@ void cleanup_cl(CLData *clData) {
   CALL_CL_GUARDED(clReleaseMemObject, (clData->buf_debug_data1));
   CALL_CL_GUARDED(clReleaseMemObject, (clData->buf_debug_data2));
   CALL_CL_GUARDED(clReleaseMemObject, (clData->buf_debug_data3));
-  
+
   CALL_CL_GUARDED(clReleaseKernel, (clData->advect_velocity_kernel));
   CALL_CL_GUARDED(clReleaseKernel, (clData->advect_density_kernel));
   CALL_CL_GUARDED(clReleaseKernel, (clData->vorticity_confinement_kernel));
@@ -273,11 +274,11 @@ void cleanup_cl(CLData *clData) {
   CALL_CL_GUARDED(clReleaseKernel, (clData->zero_pressure_kernel));
   CALL_CL_GUARDED(clReleaseKernel, (clData->laplacian_mtx_vec_mult_kernel));
   CALL_CL_GUARDED(clReleaseKernel, (clData->vector_dot_product_kernel));
-  
+
   CALL_CL_GUARDED(clReleaseCommandQueue, (clData->queue));
   CALL_CL_GUARDED(clReleaseContext, (clData->ctx));
-  
-  
+
+
 //  free(clData->debug_data1);
 //  free(clData->debug_data2);
 //  free(clData->debug_data3);
@@ -300,10 +301,10 @@ void run_cl_advect_density(CLData * clData, float dt)
 //                 clData->buf_debug_data2,
 //                 clData->buf_debug_data3
                     );
-    
+
     size_t ldim[] = { WGSIZE };
     size_t gdim[] = { clData->n};
-    
+
     CALL_CL_GUARDED(clEnqueueNDRangeKernel,
                     (clData->queue, clData->advect_density_kernel,
                      /*dimensions*/ 1, NULL, gdim, ldim,
@@ -328,15 +329,15 @@ void run_cl_advect_velocity(CLData * clData, float dt)
 //                     clData->buf_debug_data2,
 //                     clData->buf_debug_data3
                     );
-  
+
   size_t ldim[] = { WGSIZE };
   size_t gdim[] = { clData->n};
-  
+
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
                   (clData->queue, clData->advect_velocity_kernel,
                    /*dimensions*/ 1, NULL, gdim, ldim,
                    0, NULL, NULL));
-  
+
 }
 
 void run_cl_vorticity_confinement(CLData * clData, float dt, float e)
@@ -353,15 +354,15 @@ void run_cl_vorticity_confinement(CLData * clData, float dt, float e)
                     dt,
                     e
                     );
-  
+
   size_t ldim[] = { WGSIZE };
   size_t gdim[] = { clData->n};
-  
+
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
                   (clData->queue, clData->vorticity_confinement_kernel,
                    /*dimensions*/ 1, NULL, gdim, ldim,
                    0, NULL, NULL));
-  
+
 }
 
 void run_cl_calculate_divergence(CLData * clData, float dt)
@@ -374,15 +375,15 @@ void run_cl_calculate_divergence(CLData * clData, float dt)
                      clData->buf_w,
                      clData->dims,
                      dt);
-  
+
   size_t ldim[] = { WGSIZE };
   size_t gdim[] = { clData->n};
-  
+
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
                   (clData->queue, clData->calculate_divergence_kernel,
                    /*dimensions*/ 1, NULL, gdim, ldim,
                    0, NULL, NULL));
-  
+
 }
 
 void run_laplacian_mtx_vec_mult(CLData * clData)
@@ -392,15 +393,15 @@ void run_laplacian_mtx_vec_mult(CLData * clData)
                     clData->buf_cg_q,
                     clData->buf_cg_d,
                     clData->dims);
-  
+
   size_t ldim[] = { WGSIZE };
   size_t gdim[] = { clData->n};
-  
+
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
                   (clData->queue, clData->laplacian_mtx_vec_mult_kernel,
                    /*dimensions*/ 1, NULL, gdim, ldim,
                    0, NULL, NULL));
-  
+
 }
 
 
@@ -416,8 +417,8 @@ void mtx_times_vec_for_laplacian(float *out, float* x, int n);
   void run_cl_cg_no_mtx(CLData *clData,float* x, float *b, float *r, float *d, float *q, int N, int maxIter, float tol){
     //x = pressure
     //b = divergence
-    
-    
+
+
     //When porting cg to opencl  only the mtx-vec multiply and the
     //dot-product(reduction) are run on the GPU everything is on the GPU
     int i = 0;
@@ -425,17 +426,17 @@ void mtx_times_vec_for_laplacian(float *out, float* x, int n);
 //    float r[N];
 //    float d[N];
 //    float q[N];
-    
+
     for(int i = 0; i < N; i++){
       x[i] = q[i] = 0.0f;
       r[i] = b[i];//b-Ax
       d[i] = r[i];
     }
-    
-    
+
+
     float rnew = dot_vec(r,r,N);
     float rold = 0.0f;
-    
+
     float r0 = rnew;
     while(i < imax && rnew > 0.0000001*r0) {
       transfer_cl_float_buffer_to_device(clData,clData->buf_cg_q,q,clData->n,true);
@@ -445,24 +446,24 @@ void mtx_times_vec_for_laplacian(float *out, float* x, int n);
       transfer_cl_float_buffer_from_device(clData,clData->buf_cg_d,d,clData->n,true);
       //mtx_times_vec_for_laplacian(q,d,N);
       float alpha = rnew/(dot_vec(d,q,N));
-      
+
       for(int j = 0; j < N; j++){
         x[j] += alpha*d[j];
       }
-      
+
       for(int j = 0; j < N; j++){
         r[j] -= alpha*q[j];
       }
-      
+
       rold = rnew;
       rnew = dot_vec(r,r,N);
-      
+
       float beta = rnew/rold;
-      
+
       for(int j = 0; j < N; j++){
         d[j] = r[j] + beta*d[j];
       }
-      
+
       i++;
     }
     //printf("CG Terminated with iterations %d, and rnew %3.6f\n",i, rnew);
@@ -477,20 +478,20 @@ void mtx_times_vec_for_laplacian(float *out, float* x, int n);
                       clData->buf_divergence,
                     clData->dims,
                     dt);
-  
+
   size_t ldim[] = { WGSIZE };
   size_t gdim[] = { clData->n};
-  
+
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
                   (clData->queue, clData->pressure_solve_kernel,
                    /*dimensions*/ 1, NULL, gdim, ldim,
                    0, NULL, NULL));
-  
+
   //swap pressure buffers
 //  cl_mem tmp = clData->buf_pressure;
 //  clData->buf_pressure = clData->buf_pressure_prev;
 //  clData->buf_pressure_prev = tmp;
-  
+
 }
 
 void run_cl_pressure_apply(CLData * clData, float dt)
@@ -503,28 +504,28 @@ void run_cl_pressure_apply(CLData * clData, float dt)
                     clData->buf_pressure,
                     clData->dims,
                     dt);
-  
+
   size_t ldim[] = { WGSIZE };
   size_t gdim[] = { clData->n};
-  
+
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
                   (clData->queue, clData->pressure_apply_kernel,
                    /*dimensions*/ 1, NULL, gdim, ldim,
                    0, NULL, NULL));
-  
+
 }
 void run_cl_zero_pressure(CLData * clData)
 {
   SET_1_KERNEL_ARG( clData->zero_pressure_kernel, clData->buf_pressure);
-  
+
   size_t ldim[] = { WGSIZE };
   size_t gdim[] = { clData->n};
-  
+
   CALL_CL_GUARDED(clEnqueueNDRangeKernel,
                   (clData->queue, clData->zero_pressure_kernel,
                    /*dimensions*/ 1, NULL, gdim, ldim,
                    0, NULL, NULL));
-  
+
 }
 
 #endif //CL_SOLVER_H

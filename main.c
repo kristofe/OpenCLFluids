@@ -52,6 +52,7 @@ float * g_u, * g_v, * g_w, * g_u_prev, * g_v_prev, * g_w_prev;
 float * g_dens, * g_dens_prev;
 float * g_heat, * g_heat_prev;
 float * g_curl;
+float * g_obs;
 float * g_compressibility;
 float * g_divergence;
 float * g_pressure, *g_pressure_prev;
@@ -106,6 +107,7 @@ void transfer_buffers_to_gpu()
    transfer_cl_float_buffer_to_device(&clData,clData.buf_w,g_w,clData.n,true);
    transfer_cl_float_buffer_to_device(&clData,clData.buf_pressure,g_pressure,clData.n,true);
    transfer_cl_float_buffer_to_device(&clData,clData.buf_pressure_prev,g_pressure_prev,clData.n,true);
+   transfer_cl_float_buffer_to_device(&clData,clData.buf_obs,g_obs,clData.n,true);
 
 
    //transfer_cl_int_buffer_to_device(&clData,clData.buf_dims,dims,3,true);
@@ -127,6 +129,7 @@ void transfer_buffers_to_cpu()
    transfer_cl_float_buffer_from_device(&clData,clData.buf_w,g_w,clData.n,true);
    transfer_cl_float_buffer_from_device(&clData,clData.buf_pressure,g_pressure,clData.n,true);
    transfer_cl_float_buffer_from_device(&clData,clData.buf_pressure_prev,g_pressure_prev,clData.n,true);
+   transfer_cl_float_buffer_from_device(&clData,clData.buf_obs,g_obs,clData.n,true);
 //   transfer_cl_float_buffer_from_device(&clData,clData.buf_debug_data1,clData.debug_data1,clData.dn*clData.n,true);
 //   transfer_cl_float_buffer_from_device(&clData,clData.buf_debug_data2,clData.debug_data2,clData.dn*clData.n,true);
 //   transfer_cl_float_buffer_from_device(&clData,clData.buf_debug_data3,clData.debug_data3,clData.dn*clData.n,true);
@@ -150,6 +153,7 @@ static void free_data ( void )
     if ( g_dens ) free ( g_dens );
     if ( g_dens_prev ) free ( g_dens_prev );
     if ( g_curl ) free ( g_curl );
+    if ( g_obs ) free ( g_obs );
     if ( g_heat ) free (g_heat);
     if ( g_heat_prev) free(g_heat_prev);
     if (g_compressibility) free (g_compressibility);
@@ -172,7 +176,7 @@ static void clear_data ( void )
         g_u[i] = g_v[i] = g_w[i] = g_u_prev[i] = g_v_prev[i] = g_w_prev[i] =
             g_dens[i] = g_dens_prev[i] = g_curl[i] =
             g_heat[i] = g_heat_prev[i] = g_compressibility[i] =
-            g_divergence[i] = g_pressure[i] = g_pressure_prev[i]  = 0.0f;
+            g_divergence[i] = g_pressure[i] = g_pressure_prev[i]  g_obs[i]= 0.0f;
     }
 
   //memset(g_laplacian_matrix,0.0f, sizeof(float)*size*size);
@@ -199,13 +203,14 @@ static int allocate_data ( void )
     g_pressure		= (float *) malloc ( size*sizeof(float) );
     g_pressure_prev	= (float *) malloc ( size*sizeof(float) );
     g_compressibility =  (float *) malloc ( size*sizeof(float) );
+    g_obs   		= (float *) malloc ( size*sizeof(float) );
 
   g_cg_r =  (float *) malloc ( size*sizeof(float) );
     g_cg_d =  (float *) malloc ( size*sizeof(float) );
     g_cg_q =  (float *) malloc ( size*sizeof(float) );
 
     if ( !g_u || !g_v || !g_u_prev || !g_v_prev || !g_dens || !g_dens_prev || !g_curl || !g_compressibility
-        || !g_pressure || !g_pressure_prev || !g_divergence) {
+        || !g_pressure || !g_pressure_prev || !g_divergence || g_obs) {
         fprintf ( stderr, "cannot allocate data\n" );
         return ( 0 );
     }
