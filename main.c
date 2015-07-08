@@ -1,4 +1,4 @@
-#define USE_OPENCL 1
+#define USE_OPENCL 0
 #define USE_OPENCL_ON_CPU 0
 
 #define RUN_TIMINGS 0
@@ -1126,7 +1126,9 @@ int main ( int argc, char ** argv )
 
 
   print_platforms_devices();
+#if USE_OPENCL
   run_opencl_test();
+#endif
 
 //	run_tests();
 
