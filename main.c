@@ -36,12 +36,14 @@
 #include <GL/glut.h>
 #endif
 
+#if USE_OPENCL
 #include "cl-helper.h"
 #include "timing.h"
 
-#include "second_order_solver.h"
 #include "cl_solver.h"
+#endif
 
+#include "second_order_solver.h"
 
 
 float dt;
@@ -71,11 +73,12 @@ int maccormack;
 int vorticity;
 int useCG;
 
+//OpenCL globals
+int dims[3] = { NX, NY, NZ};
+#if USE_OPENCL
 CLData clData;
 
 
-//OpenCL globals
-int dims[3] = { NX, NY, NZ};
 
 
 void init_opencl()
@@ -142,6 +145,7 @@ void flush_cl_queue()
 {
    CALL_CL_GUARDED(clFinish, (clData.queue));
 }
+#endif //USE_OPENCL
 
 static void free_data ( void )
 {
@@ -668,7 +672,9 @@ void readMatrix(float* m, int n){
   fclose(fp);
 }
 
+#if USE_OPENCL
 void runTimings(){
+
   int ntrips = 10;
   char device_name[256];
 
@@ -876,7 +882,7 @@ void runTimings(){
 
 }
 
-
+#endif //USE_OPENCL
 
 
 void testCG(){
@@ -958,7 +964,7 @@ void testCG(){
 
 }
 
-
+#if USE_OPENCL
 
 static void test_opencl_opengl_interop()
 {
@@ -1063,6 +1069,7 @@ void run_opencl_test(){
 
 
 }
+#endif //USE_OPENCL
 
 static void open_glut_window ( void )
 {
@@ -1108,27 +1115,28 @@ int main ( int argc, char ** argv )
   source = 10.0f;
 
 
-    printf ( "\n\nHow to use this demo:\n\n" );
-    printf ( "\t Add densities with the left mouse button\n" );
-    printf ( "\t Add velocities with the left mouse button and dragging the mouse\n" );
-    printf ( "\t Toggle density/velocity display with the 'v' key\n" );
-    printf ( "\t Clear the simulation by pressing the 'x' key\n" );
+  printf ( "\n\nHow to use this demo:\n\n" );
+  printf ( "\t Add densities with the left mouse button\n" );
+  printf ( "\t Add velocities with the left mouse button and dragging the mouse\n" );
+  printf ( "\t Toggle density/velocity display with the 'v' key\n" );
+  printf ( "\t toggle obstacles display by pressing the 'b' key\n" );
+  printf ( "\t Clear the simulation by pressing the 'x' key\n" );
   printf ( "\t switch poisson solvers from jacobi to conjugate gradient by pressing the 'c' key\n" );
   printf ( "\t switch advection scheme from RK2 to MacCormack by pressing the 'm' key\n" );
   printf ( "\t toggle vorticity confinement by pressing the 'o' key\n" );
 
-    printf ( "\t Quit by pressing the 'q' key\n" );
+  printf ( "\t Quit by pressing the 'q' key\n" );
 
-    dvel = 0;
-    dobs = 0;
+  dvel = 0;
+  dobs = 1;
 
-    step = 0;
-    maccormack = 0;
-    vorticity = 0;
-  useCG = 0;
+  step = 0;
+  maccormack = 0;
+  vorticity = 1;
+  useCG = 1;
 
-    if ( !allocate_data () ) exit ( 1 );
-    clear_data ();
+  if ( !allocate_data () ) exit ( 1 );
+  clear_data ();
 
 
 
@@ -1150,8 +1158,8 @@ int main ( int argc, char ** argv )
   exit(0);
 #endif
 
-    copy_grid(g_u_prev, g_u);
-    copy_grid(g_v_prev, g_v);
+  copy_grid(g_u_prev, g_u);
+  copy_grid(g_v_prev, g_v);
 
   g_dens_prev[IX(16,3,0)] = 10.0f;
 
