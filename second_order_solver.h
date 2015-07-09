@@ -170,6 +170,63 @@ float get_data_z(float * x, int i, int j, int k)
 
   return x[IX(i,j,k)];
 }
+  float get_interpolated_value_with_obs(float * x, int* obs, float3 pos, float h, int3 n)
+  {
+
+    //TODO: THIS ASSUMES THAT OBSTACLES HAVE ZERO VELOCITY.
+
+    //The grid world pos is 0-1.
+    int i0 = pos.x / h;
+    int j0 = pos.y / h;
+    int k0 = pos.z / h;
+    int i1 = CLAMP(0,n.x-1, i0 + 1);
+    int j1 = CLAMP(0,n.y-1, j0 + 1);
+    int k1 = CLAMP(0,n.z-1, k0 + 1);
+
+    //Calculate t per component
+    float it = (pos.x - i0*h);
+    float jt = (pos.y - j0*h);
+    float kt = (pos.z - k0*h);
+
+
+    assert (it < 1.0 && it >= 0);
+    assert (jt < 1.0 && jt >= 0);
+    assert (kt < 1.0 && kt >= 0);
+
+    // Assume a cube with 8 points
+    //Front face
+    //Top Front MIX
+    float xFrontLeftTop = x[IX(i0,j1,k0)] * (1 - obs[IX(i0,j1,k0)]);
+    float xFrontRightTop = x[IX(i1,j1,k0)] * (1 - obs[IX(i1,j1,k0)]);
+    float xFrontTopInterp = MIX(xFrontLeftTop, xFrontRightTop, it);
+    //Bottom Front MIX
+    float xFrontLeftBottom = x[IX(i0,j0,k0)] * (1 - obs[IX(i0,j0,k0)]);
+    float xFrontRightBottom = x[IX(i1,j0,k0)] * (1 - obs[IX(i1,j0,k0)]);
+    float xFrontBottomInterp = MIX(xFrontLeftBottom, xFrontRightBottom, it);
+
+    //Back face
+    //Top Back MIX
+    float xBackLeftTop = x[IX(i0,j1,k1)] * (1 - obs[IX(i0,j1,k1)]);
+    float xBackRightTop = x[IX(i1,j1,k1)] * (1 - obs[IX(i1,j1,k1)]);
+    float xBackTopInterp = MIX(xBackLeftTop, xBackRightTop, it);
+    //Bottom Back MIX
+    float xBackLeftBottom = x[IX(i0,j0,k1)] * (1 - obs[IX(i0,j0,k1)]);
+    float xBackRightBottom = x[IX(i1,j0,k1)] * (1 - obs[IX(i1,j0,k1)]);
+    float xBackBottomInterp = MIX(xBackLeftBottom, xBackRightBottom, it);
+
+
+    //Now get middle of front -The bilinear interp of the front face
+    float xBiLerpFront = MIX(xFrontBottomInterp, xFrontTopInterp,jt);
+
+    //Now get middle of back -The bilinear interp of the back face
+    float xBiLerpBack = MIX(xBackBottomInterp, xBackTopInterp, jt);
+
+    //Now get the interpolated point between the points calculated in the front and back faces - The trilinear interp part
+    float xTriLerp = MIX(xBiLerpFront, xBiLerpBack, kt);
+
+    return xTriLerp;
+  }
+
   float get_interpolated_value(float * x, float3 pos, float h, int3 n)
   {
 
@@ -364,7 +421,7 @@ void vorticity_confinement(float dt, float *u, float *v, float* w, float * u_pre
     }
 }
 
-void advect_velocity_maccormack(float delta_time, float *u, float *v, float *w, float * u_prev, float * v_prev, float * w_prev)
+void advect_velocity_maccormack(float delta_time, float *u, float *v, float *w, float * u_prev, float * v_prev, float * w_prev, int* obs)
 {
   int3 dims = {NX,NY,NZ};
     float dt = delta_time*NX;
@@ -597,31 +654,29 @@ void advectRK2(float delta_time, float *q, float * q_prev, float * u_prev, float
 }
 
 void advect_velocity_RK2(float delta_time, float *u, float *v, float *w,
-    float * u_prev, float * v_prev, float * w_prev)
+    float * u_prev, float * v_prev, float * w_prev, int* obs)
 {
-  //advectRK2(delta_time,u,u_prev,u_prev,v_prev,w_prev);
-  //advectRK2(delta_time,v,v_prev,u_prev,v_prev,w_prev);
-  //advectRK2(delta_time,w,w_prev,u_prev,v_prev,w_prev);
-  //return;
 
+    //TODO: ALLOW FOR DYNAMIC OBSTACLES. Right now we are assuming that obstacles have zero velocity
     float dt = -delta_time*NX;
-  int3 dims = {NX,NY,NZ};
+    int3 dims = {NX,NY,NZ};
     FOR_EACH_FACE
     {
 
+    int is_obs = is_blocked_cell(obs, i, j, k);
     float3 pos = {i*H,j*H,k*H};
-        float3 orig_vel = {u_prev[IX(i,j,k)],v_prev[IX(i,j,k)],w_prev[IX(i,j,k)]};
+    float3 orig_vel = {u_prev[IX(i,j,k)],v_prev[IX(i,j,k)],w_prev[IX(i,j,k)]};
 
-        //RK2
-        // What is u(x)?  value(such as velocity) at x i guess
-        //y = x + dt*u(x + (dt/2)*u(x))
+    //RK2
+    // What is u(x)?  value(such as velocity) at x i guess
+    //y = x + dt*u(x + (dt/2)*u(x))
 
-        //backtrace based upon current velocity at cell center.
-        float halfDT = 0.5*dt;
-        float3 halfway_position = {
-            pos.x+(halfDT*orig_vel.x),
-            pos.y+(halfDT*orig_vel.y),
-            pos.z+(halfDT*orig_vel.z)
+    //backtrace based upon current velocity at cell center.
+    float halfDT = 0.5*dt;
+    float3 halfway_position = {
+      pos.x+(halfDT*orig_vel.x),
+      pos.y+(halfDT*orig_vel.y),
+      pos.z+(halfDT*orig_vel.z)
     };
 
 #if !WRAP_BOUNDS
@@ -631,9 +686,9 @@ void advect_velocity_RK2(float delta_time, float *u, float *v, float *w,
 #endif
 
         float3 halfway_vel;
-        halfway_vel.x = get_interpolated_value(u_prev, halfway_position,H,dims);
-        halfway_vel.y = get_interpolated_value(v_prev, halfway_position,H,dims);
-        halfway_vel.z = get_interpolated_value(w_prev, halfway_position,H,dims);
+        halfway_vel.x = get_interpolated_value_with_obs(u_prev, obs, halfway_position,H,dims);
+        halfway_vel.y = get_interpolated_value_with_obs(v_prev, obs, halfway_position,H,dims);
+        halfway_vel.z = get_interpolated_value_with_obs(w_prev, obs, halfway_position,H,dims);
 
         float3 backtraced_position;
         backtraced_position.x  = pos.x + dt*halfway_vel.x;
@@ -650,9 +705,9 @@ void advect_velocity_RK2(float delta_time, float *u, float *v, float *w,
 
         //Have to interpolate at new point
         float3 traced_velocity;
-        traced_velocity.x = get_interpolated_value(u_prev, backtraced_position,H,dims);
-        traced_velocity.y = get_interpolated_value(v_prev, backtraced_position,H,dims);
-        traced_velocity.z = get_interpolated_value(w_prev, backtraced_position,H,dims);
+        traced_velocity.x = get_interpolated_value_with_obs(u_prev, obs, backtraced_position,H,dims);
+        traced_velocity.y = get_interpolated_value_with_obs(v_prev, obs, backtraced_position,H,dims);
+        traced_velocity.z = get_interpolated_value_with_obs(w_prev, obs, backtraced_position,H,dims);
 
         //Has to be set on u
         u[IX(i,j,k)] = traced_velocity.x;
@@ -851,6 +906,26 @@ void project(double dt, float *u, float *v, float *w, float *pressure, float *di
 #else
 
 
+void calculate_divergence_with_obs(float *divergence, float *u, float *v, float *w, int* obs, float dt)
+{
+    FOR_EACH_CELL
+    {
+        //TODO:ASSUMING OBSTACLES HAVE ZERO VELOCITY
+        float u1 = get_data(u,i+1,j,k) * (1 - get_int_data(obs, i+1, j, k));
+        float u0 = get_data(u,i-1,j,k) * (1 - get_int_data(obs, i-1, j, k));
+        float v1 = get_data(v,i,j+1,k) * (1 - get_int_data(obs, i, j+1, k));
+        float v0 = get_data(v,i,j-1,k) * (1 - get_int_data(obs, i, j-1, k));
+        float w1 = get_data(w,i,j,k+1) * (1 - get_int_data(obs, i, j, k+1));
+        float w0 = get_data(w,i,j,k-1) * (1 - get_int_data(obs, i, j, k-1));
+
+        float du = u1 - u0;
+        float dv = v1 - v0;
+        float dw = w1 - w0;
+        float div = 0.5*(du + dv + dw);
+
+        divergence[IX(i,j,k)] = div;
+    }
+}
 void calculate_divergence(float *divergence, float *u, float *v, float *w, float dt)
 {
     FOR_EACH_CELL
@@ -911,6 +986,82 @@ void pressure_solve(float *pressure, float *pressure_prev,  float *divergence, i
 //      pressure = pressure_prev;
 //      pressure_prev = tmp;
         //std::swap(read, write);
+    }
+}
+
+void pressure_apply_with_obstacles(float *u, float *v, float *w, float *pressure, int* obs, float dt)
+{
+
+    FOR_EACH_CELL
+    {
+        //TODO:ASSUMING OBSTACLES HAVE ZERO VELOCITY
+        if(get_int_data(obs,i,j,k) == 1){
+          u[IX(i, j, k)] =  0.0f;
+          v[IX(i, j, k)] =  0.0f;
+          w[IX(i, j, k)] =  0.0f;
+          continue;
+        }
+
+
+
+        // calculate pressure gradient
+        float pC = get_data(pressure,i,j,k);
+        float pL = get_data(pressure,i-1,j,k);
+        float pR = get_data(pressure,i+1,j,k);
+        float pB = get_data(pressure,i,j-1,k);
+        float pT = get_data(pressure,i,j+1,k);
+        float pD = get_data(pressure,i,j,k-1);
+        float pU = get_data(pressure,i,j,k+1);
+
+
+        float3 obstV = {0,0,0};
+        float3 vMask = {1,1,1};
+
+        //TODO:ASSUMING OBSTACLES HAVE ZERO VELOCITY
+        //eventually obstV.x = velocity of obstacle.x etc
+
+        //If an adjacent cell is a solid, ignore its pressure and use it's velocity
+        if(get_int_data(obs,i-1,j,k) ==1)
+        {
+           pL = pC; obstV.x = 0.0f; vMask.x = 0;
+        }
+        if(get_int_data(obs,i+1,j,k) ==1)
+        {
+           pR = pC; obstV.x = 0.0f; vMask.x = 0;
+        }
+        if(get_int_data(obs,i,j-1,k) ==1)
+        {
+           pB = pC; obstV.y = 0.0f; vMask.y = 0;
+        }
+        if(get_int_data(obs,i,j+1,k) ==1)
+        {
+           pT = pC; obstV.y = 0.0f; vMask.y = 0;
+        }
+        if(get_int_data(obs,i,j,k-1) ==1)
+        {
+           pD = pC; obstV.z = 0.0f; vMask.z = 0;
+        }
+        if(get_int_data(obs,i,j,k+1) ==1)
+        {
+           pU = pC; obstV.z = 0.0f; vMask.z = 0;
+        }
+        //compute the gradient of pressure at the current cell by taking the central diff
+        //of neighboring pressure values
+        float3 gradP = {pR-pL, pT-pB, pU-pD};
+        gradP.x *= 0.5f;
+        gradP.y *= 0.5f;
+        gradP.z *= 0.5f;
+
+        //Project the velocity onto its divergence-free componenet by
+        //subtracting the gadient of pressure
+        float3 vOld = {u[IX(i,j,k)], v[IX(i,j,k)], w[IX(i,j,k)]};
+        float3 vNew = {vOld.x - gradP.x, vOld.y - gradP.y, vOld.z - gradP.z};
+
+        //Explicityly enforce the free-slip boundary condition by replacing the appropriate
+        //components of the new velocity with obstacle velocities
+        u[IX(i, j, k)] =  vMask.x*vNew.x + obstV.x;
+        v[IX(i, j, k)] =  vMask.y*vNew.y + obstV.y;
+        w[IX(i, j, k)] =  vMask.z*vNew.z + obstV.z;
     }
 }
 
@@ -1106,14 +1257,16 @@ void pressure_solve_cg_slow(float* pressure, float* divergence, float * mtx){
 }
 void project(double dt, float *u, float *v, float *w, float *divergence, float *pressure, float *pressure_prev, float * laplacian, float *r, float *d, float *q, int* obs, int useCG)
 {
-    calculate_divergence(divergence, u, v, w, dt);
+    //calculate_divergence(divergence, u, v, w, dt);
+    calculate_divergence_with_obs(divergence, u, v, w,obs, dt);
     //pressure_solve_cg_slow(pressure, divergence, laplacian);
   if(useCG){
     pressure_solve_cg_no_matrix(pressure, divergence,r,d,q);
   }else{
     pressure_solve(pressure,pressure_prev, divergence,obs, dt);
   }
-    pressure_apply(u, v, w, pressure, dt);
+    //pressure_apply(u, v, w, pressure, dt);
+    pressure_apply_with_obstacles(u, v, w, pressure, obs, dt);
    // IMPLEMENT THIS IS A SANITY CHECK: assert (checkDivergence());
    check_divergence(u,v,w);
 }

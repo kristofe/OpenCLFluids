@@ -567,10 +567,10 @@ static void idle_func ( void )
 
 #else
     if(maccormack){
-            advect_velocity_maccormack(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev);
+            advect_velocity_maccormack(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev, g_obs);
         } else {
             //advect_velocity_forward_euler(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev);
-            advect_velocity_RK2(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev);
+            advect_velocity_RK2(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev, g_obs);
         }
 
     //project(dt,g_u,g_v, g_w, g_divergence, g_pressure, g_pressure_prev);
@@ -803,7 +803,7 @@ void runTimings(){
   get_timestamp(&time1);
   for(int i = 0; i < ntrips; ++i)
   {
-    advect_velocity_RK2(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev);
+    advect_velocity_RK2(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev,g_obs);
   }
   get_timestamp(&time2);
   advectionVelocityTimeCPU = timestamp_diff_in_seconds(time1,time2)/ntrips;
