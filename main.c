@@ -4,8 +4,8 @@
 #define RUN_TIMINGS 0
 
 //GRID DIMENSIONS
-#define NX 64
-#define NY 64
+#define NX 96
+#define NY 96
 #define NZ 1
 #define H  1.0f
 

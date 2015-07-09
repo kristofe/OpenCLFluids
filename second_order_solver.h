@@ -410,7 +410,7 @@ void vorticity_confinement(float dt, float *u, float *v, float* w, float * u_pre
 
     curl = get_curl(u_prev,v_prev, w_prev, i, j, k );
 
-    float e = 0.5f;
+    float e = 0.275f;
 
     f = cross3(&n, &curl);
 
