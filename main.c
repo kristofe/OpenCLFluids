@@ -1160,12 +1160,23 @@ int main ( int argc, char ** argv )
   //setup obstacles
   const int ww = NX*0.125;
   const int hh = NY*0.125;
-  int left = NX/2 - ww/2;
-  int right = NX/2 + ww/2/2;
+  int left = NX/2 - ww/2 + NX/4;
+  int right = NX/2 + ww/2 + NX/4;
   int top = NY/2 + hh/2;
   int bottom = NY/2 - hh/2;
+
+  float3 center = {NX/2, NY/2, 0.0f};
+  float radius = NX/10;
   FOR_EACH_CELL
   {
+    float3 pos = {i, j, 0};
+    float3 diff = {center.x - i, center.y - j, 0};
+    float distSqr = diff.x*diff.x + diff.y*diff.y;
+    if(distSqr < radius*radius)
+    {
+        g_obs[IX(i,j,0)] = 1;
+    }
+
     if(i > left  && i < right  && j > bottom && j < top)
       g_obs[IX(i,j,0)] = 1;
   }
