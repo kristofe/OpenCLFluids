@@ -235,11 +235,11 @@ static int allocate_data ( void )
 
 static void setup_sources_and_forces()
 {  
-  const int ww = NX*0.25;
+  const int ww = NX*0.125;
   const int hh = 2;
   int left = NX / 2 - ww / 2;
   int right = NX / 2 + ww / 2;
-  int bottom = 3;
+  int bottom = 1;
   int top = bottom + hh;
 
   FOR_EACH_CELL
@@ -247,7 +247,7 @@ static void setup_sources_and_forces()
 
     if (i > left  && i < right  && j > bottom && j < top)
       g_dens_prev[IX(i, j, 0)] = 1;
-      g_v_prev[IX(i, j, 0)] = 0.01f;
+      g_heat_prev[IX(i, j, 0)] = 0.01f;
   }
 
 }
@@ -255,14 +255,14 @@ static void setup_obstacles()
 {  
   //setup obstacles
   const int ww = NX*0.125;
-  const int hh = NY*0.125;
+  const int hh = NY*0.0125;
   int left = NX / 2 - ww / 2 + NX / 4;
   int right = NX / 2 + ww / 2 + NX / 4;
   int top = NY / 2 + hh / 2;
   int bottom = NY / 2 - hh / 2;
 
-  float3 center = { NX / 2.0f, NY / 4.0f, 0.0f };
-  float radius = NX / 20.0f;
+  float3 center = { NX / 2.0f, NY / 3.5f, 0.0f };
+  float radius = NX / 10.0f;
   FOR_EACH_CELL
   {
     float3 pos = { i, j, 0 };
@@ -439,6 +439,11 @@ static void get_from_UI ( float * d, float * u, float * v, float * heat, float *
     j = (int)(((win_y-my)/(float)win_y)*NY);
 
     if ( i<2 || i>=NX-1 || j<2 || j>=NY-1 ) return;
+
+    if (mouse_down[2])
+    {
+      g_heat_prev[IX(i, j, 0)] = 1.0f;
+    }
 
     if ( mouse_down[0] || mouse_down[2] ) {
         /*
@@ -632,14 +637,17 @@ static void idle_func ( void )
 
 
 #else
+    //Bouyance should be considered an external force and should be applied immediately after velocity advection
+    bouyancy(g_v_prev, g_heat);
     if(maccormack){
             advect_velocity_maccormack(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev, g_obs);
         } else {
             //advect_velocity_forward_euler(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev);
             advect_velocity_RK2(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev, g_obs);
         }
+
     //Need to advect heat
-    //advect_heat_RK2(st, g_heat, g_heat_prev,g_obs);
+    advectRK2(dt, g_heat, g_heat_prev,g_u, g_v, g_w,g_obs);
 
     //Maybe damp it too
 
@@ -647,12 +655,11 @@ static void idle_func ( void )
     project(dt,g_u,g_v, g_w, g_divergence, g_pressure, g_pressure_prev, g_laplacian_matrix,g_cg_r, g_cg_d, g_cg_q,g_obs,useCG);
 
 
-        advectRK2(dt,g_dens,g_dens_prev, g_u, g_v, g_w);
+        advectRK2(dt,g_dens,g_dens_prev, g_u, g_v, g_w, g_obs);
 
     if(vorticity) {
             vorticity_confinement(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev);
         }
-    //bouyancy(g_v_prev, g_heat);
 #endif
 
     
@@ -660,7 +667,7 @@ static void idle_func ( void )
         SWAP(g_u,g_u_prev);
         SWAP(g_v,g_v_prev);
         SWAP(g_dens, g_dens_prev);
-        //SWAP(g_heat, g_heat_prev);
+        SWAP(g_heat, g_heat_prev);
 
         //copy_grid(g_u,g_u_prev);
         //copy_grid(g_v,g_v_prev);

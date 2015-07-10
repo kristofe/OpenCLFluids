@@ -597,7 +597,7 @@ void advect_velocity_maccormack(float delta_time, float *u, float *v, float *w, 
 
 }
 
-void advectRK2(float delta_time, float *q, float * q_prev, float * u_prev, float * v_prev, float * w_prev)
+void advectRK2(float delta_time, float *q, float * q_prev, float * u_prev, float * v_prev, float * w_prev, float * obs)
 {
     float dt = -delta_time*NX;
   int3 dims = {NX,NY,NZ};
@@ -628,9 +628,9 @@ void advectRK2(float delta_time, float *q, float * q_prev, float * u_prev, float
 #endif
 
         float3 halfway_vel;
-        halfway_vel.x = get_interpolated_value(u_prev, halfway_position,_H_,dims);
-        halfway_vel.y = get_interpolated_value(v_prev, halfway_position,_H_,dims);
-        halfway_vel.z = get_interpolated_value(w_prev, halfway_position,_H_,dims);
+        halfway_vel.x = get_interpolated_value_with_obs(u_prev,obs, halfway_position, _H_, dims);
+        halfway_vel.y = get_interpolated_value_with_obs(v_prev,obs, halfway_position, _H_, dims);
+        halfway_vel.z = get_interpolated_value_with_obs(w_prev,obs, halfway_position, _H_, dims);
 
         float3 backtraced_position;
         backtraced_position.x  = pos.x + dt*halfway_vel.x;
@@ -647,7 +647,7 @@ void advectRK2(float delta_time, float *q, float * q_prev, float * u_prev, float
 
         //Have to interpolate at new point
         float traced_q;
-        traced_q = get_interpolated_value(q_prev, backtraced_position,_H_,dims);
+        traced_q = get_interpolated_value_with_obs(q_prev,obs, backtraced_position, _H_, dims);
 
         //Has to be set on u
         q[IX(i,j,k)] = traced_q;
@@ -762,14 +762,17 @@ void advect_velocity_forward_euler(float delta_time, float *u, float *v, float *
 void bouyancy(float *v, float *temp)
 {
   float Tamb = 0.0f;
-  float a = 0.000625f;
+  float a = 0.0000625f;
   float b = 0.025f;
+  
+  /*
   FOR_EACH_CELL
   {
     Tamb += temp[IX(i, j, k)];
   }
   
   Tamb /= (NX*NY*NZ);
+  */
 
   FOR_EACH_CELL
   {
