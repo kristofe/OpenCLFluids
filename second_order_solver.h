@@ -759,6 +759,24 @@ void advect_velocity_forward_euler(float delta_time, float *u, float *v, float *
 
 }
 
+void bouyancy(float *v, float *temp)
+{
+  float Tamb = 0.0f;
+  float a = 0.000625f;
+  float b = 0.025f;
+  FOR_EACH_CELL
+  {
+    Tamb += temp[IX(i, j, k)];
+  }
+  
+  Tamb /= (NX*NY*NZ);
+
+  FOR_EACH_CELL
+  {
+    v[IX(i, j, k)] -= a * temp[IX(i, j, k)] + -b * (temp[IX(i, j, k)] - Tamb);
+  }
+}
+
 void blur(float *u, float *v, float *w, float dt)
 {
     FOR_EACH_CELL

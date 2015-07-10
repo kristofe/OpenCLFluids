@@ -638,6 +638,10 @@ static void idle_func ( void )
             //advect_velocity_forward_euler(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev);
             advect_velocity_RK2(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev, g_obs);
         }
+    //Need to advect heat
+    //advect_heat_RK2(st, g_heat, g_heat_prev,g_obs);
+
+    //Maybe damp it too
 
     //project(dt,g_u,g_v, g_w, g_divergence, g_pressure, g_pressure_prev);
     project(dt,g_u,g_v, g_w, g_divergence, g_pressure, g_pressure_prev, g_laplacian_matrix,g_cg_r, g_cg_d, g_cg_q,g_obs,useCG);
@@ -648,13 +652,15 @@ static void idle_func ( void )
     if(vorticity) {
             vorticity_confinement(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev);
         }
+    //bouyancy(g_v_prev, g_heat);
 #endif
 
-
+    
 
         SWAP(g_u,g_u_prev);
         SWAP(g_v,g_v_prev);
         SWAP(g_dens, g_dens_prev);
+        //SWAP(g_heat, g_heat_prev);
 
         //copy_grid(g_u,g_u_prev);
         //copy_grid(g_v,g_v_prev);
@@ -1229,7 +1235,7 @@ int main ( int argc, char ** argv )
   copy_grid(g_u_prev, g_u);
   copy_grid(g_v_prev, g_v);
 
-  g_dens_prev[IX(16,3,0)] = 10.0f;
+  //g_dens_prev[IX(16,3,0)] = 10.0f;
 
 
   setup_obstacles();
