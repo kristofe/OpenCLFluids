@@ -7,7 +7,8 @@
 #define NX 96
 #define NY 96
 #define NZ 1
-#define H  1.0f
+#define _H_  1.0f
+
 
 #ifdef __APPLE__
   #define GL_SHARING_EXTENSION "cl_APPLE_gl_sharing"
@@ -32,6 +33,8 @@
 
 #elif WIN32
 #include "GL/glut.h"
+#include <Windows.h>
+
 #else
 #include <GL/glut.h>
 #endif
@@ -885,6 +888,7 @@ void runTimings(){
 #endif //USE_OPENCL
 
 
+#ifndef WIN32
 void testCG(){
   int N = 100;
   //read n=100 spd matrix from file
@@ -963,6 +967,7 @@ void testCG(){
 
 
 }
+#endif //WIN32
 
 #if USE_OPENCL
 
@@ -1207,8 +1212,8 @@ int main ( int argc, char ** argv )
     */
 
 
-  print_platforms_devices();
 #if USE_OPENCL
+  print_platforms_devices();
   run_opencl_test();
 #endif
 

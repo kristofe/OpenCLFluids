@@ -13,7 +13,8 @@ FILE(GLOB MAIN_HEADERS *.h)
 
 
 set(SOURCES
-   ${MAIN_SOURCE}
+  main.c
+  #${MAIN_SOURCE}
 )
 
 
@@ -121,24 +122,25 @@ if(WIN32)
   #    message(ERROR " GLUT not found!")
   #endif(NOT GLUT_FOUND)
 
-  find_package(OpenCL REQUIRED)
-  include_directories(${OpenCL_INCLUDE_DIRS})
-  link_directories(${OpenCL_LIBRARY_DIRS})
-  add_definitions(${OpenCL_DEFINITIONS})
-  if(NOT OpenCL_FOUND)
-      message(ERROR " OpenCL not found!")
-  endif(NOT OpenCL_FOUND)
-  message("OpenCL include:" ${OpenCL_INCLUDE_DIRS})
-  message("OpenCL lib:" ${OpenCL_LIBRARY_DIRS})
+#  find_package(OpenCL REQUIRED)
+#  include_directories(${OpenCL_INCLUDE_DIRS})
+#  link_directories(${OpenCL_LIBRARY_DIRS})
+#  add_definitions(${OpenCL_DEFINITIONS})
+#  if(NOT OpenCL_FOUND)
+#      message(ERROR " OpenCL not found!")
+#  endif(NOT OpenCL_FOUND)
+#  message("OpenCL include:" ${OpenCL_INCLUDE_DIRS})
+#  message("OpenCL lib:" ${OpenCL_LIBRARY_DIRS})
 
 #cmake does not like if you add .lib to the libraries on windows!
   LIST(
       APPEND
       EXTRA_LIBS
-      winmm
       freeglut
       )
+
   set (CMAKE_C_STANDARD 99)
+
 ENDIF(WIN32)
 
 if(UNIX AND NOT APPLE)
@@ -246,5 +248,13 @@ else()
   message("Sources:" ${SOURCES})
   add_executable(${app_name} ${SOURCES} ${HEADERS})
 endif(APPLE)
+
+#if(WIN32)
+
+  add_custom_command(TARGET ${app_name} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${PROJECT_SOURCE_DIR}/freeglut/bin"
+        $<TARGET_FILE_DIR:${app_name}>)
+#endif(WIN32)
 
 target_link_libraries(${app_name} ${EXTRA_LIBS})

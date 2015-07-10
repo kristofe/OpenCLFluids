@@ -98,6 +98,7 @@ using namespace boost::numeric;
     }
   }
 
+#ifndef WIN32
   float min(float a, float b) {
     return a>b?b:a;
   }
@@ -106,6 +107,7 @@ using namespace boost::numeric;
     return b>a?b:a;
   }
 
+#endif //WIN32
 
   int mod (int a, int b)
   {
@@ -433,7 +435,7 @@ void advect_velocity_maccormack(float delta_time, float *u, float *v, float *w, 
         //phi_hat_n = A^reverse(phi_hat_n_plus_one)
         //phi_n_plus_one = phi_hat_n_plus_one + (phi_n - phi_hat_dims)/2
 
-        float3 pos = {i*H,j*H,k*H};
+        float3 pos = {i*_H_,j*_H_,k*_H_};
         float3 phi_n = {u_prev[IX(i,j,k)],v_prev[IX(i,j,k)],w_prev[IX(i,j,k)]};
 
         float3 phi_hat_n_plus_one_sample_position = {
@@ -449,9 +451,9 @@ void advect_velocity_maccormack(float delta_time, float *u, float *v, float *w, 
 #endif
 
         float3 phi_hat_n_plus_one;
-        phi_hat_n_plus_one.x = get_interpolated_value(u_prev, phi_hat_n_plus_one_sample_position,H,dims);
-        phi_hat_n_plus_one.y = get_interpolated_value(v_prev, phi_hat_n_plus_one_sample_position,H,dims);
-        phi_hat_n_plus_one.z = get_interpolated_value(w_prev, phi_hat_n_plus_one_sample_position,H,dims);
+        phi_hat_n_plus_one.x = get_interpolated_value(u_prev, phi_hat_n_plus_one_sample_position,_H_,dims);
+        phi_hat_n_plus_one.y = get_interpolated_value(v_prev, phi_hat_n_plus_one_sample_position,_H_,dims);
+        phi_hat_n_plus_one.z = get_interpolated_value(w_prev, phi_hat_n_plus_one_sample_position,_H_,dims);
 
         float3 phi_hat_n_sample_position;
         phi_hat_n_sample_position.x  = phi_hat_n_plus_one_sample_position.x + dt*phi_hat_n_plus_one.x;
@@ -466,9 +468,9 @@ void advect_velocity_maccormack(float delta_time, float *u, float *v, float *w, 
 #endif
 
         float3 phi_hat_n;
-        phi_hat_n.x = get_interpolated_value(u_prev, phi_hat_n_sample_position,H,dims);
-        phi_hat_n.y = get_interpolated_value(v_prev, phi_hat_n_sample_position,H,dims);
-        phi_hat_n.z = get_interpolated_value(w_prev, phi_hat_n_sample_position,H,dims);
+        phi_hat_n.x = get_interpolated_value(u_prev, phi_hat_n_sample_position,_H_,dims);
+        phi_hat_n.y = get_interpolated_value(v_prev, phi_hat_n_sample_position,_H_,dims);
+        phi_hat_n.z = get_interpolated_value(w_prev, phi_hat_n_sample_position,_H_,dims);
 
 
 
@@ -479,9 +481,9 @@ void advect_velocity_maccormack(float delta_time, float *u, float *v, float *w, 
 
         //int indices[3] = {i,j,k};
         int3 indices = {
-            (int)(phi_hat_n_plus_one_sample_position.x/H),
-            (int)(phi_hat_n_plus_one_sample_position.y/H),
-            (int)(phi_hat_n_plus_one_sample_position.z/H)
+            (int)(phi_hat_n_plus_one_sample_position.x/_H_),
+            (int)(phi_hat_n_plus_one_sample_position.y/_H_),
+            (int)(phi_hat_n_plus_one_sample_position.z/_H_)
         };
 
 
@@ -568,9 +570,9 @@ void advect_velocity_maccormack(float delta_time, float *u, float *v, float *w, 
 
         //Now sample the velocity there
         float3 velocity;
-        velocity.x = get_interpolated_value(u_prev, velocity_sample_position,H,dims);
-        velocity.y = get_interpolated_value(v_prev, velocity_sample_position,H,dims);
-        velocity.z = get_interpolated_value(w_prev, velocity_sample_position,H,dims);
+        velocity.x = get_interpolated_value(u_prev, velocity_sample_position,_H_,dims);
+        velocity.y = get_interpolated_value(v_prev, velocity_sample_position,_H_,dims);
+        velocity.z = get_interpolated_value(w_prev, velocity_sample_position,_H_,dims);
 
         /*float velocity[3] = {
             phi_n_plus_one[0],
@@ -603,7 +605,7 @@ void advectRK2(float delta_time, float *q, float * q_prev, float * u_prev, float
     FOR_EACH_FACE
     {
 
-        float3 pos = {i*H,j*H,k*H};
+        float3 pos = {i*_H_,j*_H_,k*_H_};
         float3 orig_vel = {u_prev[IX(i,j,k)],v_prev[IX(i,j,k)],w_prev[IX(i,j,k)]};
 
 
@@ -626,9 +628,9 @@ void advectRK2(float delta_time, float *q, float * q_prev, float * u_prev, float
 #endif
 
         float3 halfway_vel;
-        halfway_vel.x = get_interpolated_value(u_prev, halfway_position,H,dims);
-        halfway_vel.y = get_interpolated_value(v_prev, halfway_position,H,dims);
-        halfway_vel.z = get_interpolated_value(w_prev, halfway_position,H,dims);
+        halfway_vel.x = get_interpolated_value(u_prev, halfway_position,_H_,dims);
+        halfway_vel.y = get_interpolated_value(v_prev, halfway_position,_H_,dims);
+        halfway_vel.z = get_interpolated_value(w_prev, halfway_position,_H_,dims);
 
         float3 backtraced_position;
         backtraced_position.x  = pos.x + dt*halfway_vel.x;
@@ -645,7 +647,7 @@ void advectRK2(float delta_time, float *q, float * q_prev, float * u_prev, float
 
         //Have to interpolate at new point
         float traced_q;
-        traced_q = get_interpolated_value(q_prev, backtraced_position,H,dims);
+        traced_q = get_interpolated_value(q_prev, backtraced_position,_H_,dims);
 
         //Has to be set on u
         q[IX(i,j,k)] = traced_q;
@@ -664,7 +666,7 @@ void advect_velocity_RK2(float delta_time, float *u, float *v, float *w,
     {
 
     int is_obs = is_blocked_cell(obs, i, j, k);
-    float3 pos = {i*H,j*H,k*H};
+    float3 pos = {i*_H_,j*_H_,k*_H_};
     float3 orig_vel = {u_prev[IX(i,j,k)],v_prev[IX(i,j,k)],w_prev[IX(i,j,k)]};
 
     //RK2
@@ -686,9 +688,9 @@ void advect_velocity_RK2(float delta_time, float *u, float *v, float *w,
 #endif
 
         float3 halfway_vel;
-        halfway_vel.x = get_interpolated_value_with_obs(u_prev, obs, halfway_position,H,dims);
-        halfway_vel.y = get_interpolated_value_with_obs(v_prev, obs, halfway_position,H,dims);
-        halfway_vel.z = get_interpolated_value_with_obs(w_prev, obs, halfway_position,H,dims);
+        halfway_vel.x = get_interpolated_value_with_obs(u_prev, obs, halfway_position,_H_,dims);
+        halfway_vel.y = get_interpolated_value_with_obs(v_prev, obs, halfway_position,_H_,dims);
+        halfway_vel.z = get_interpolated_value_with_obs(w_prev, obs, halfway_position,_H_,dims);
 
         float3 backtraced_position;
         backtraced_position.x  = pos.x + dt*halfway_vel.x;
@@ -705,9 +707,9 @@ void advect_velocity_RK2(float delta_time, float *u, float *v, float *w,
 
         //Have to interpolate at new point
         float3 traced_velocity;
-        traced_velocity.x = get_interpolated_value_with_obs(u_prev, obs, backtraced_position,H,dims);
-        traced_velocity.y = get_interpolated_value_with_obs(v_prev, obs, backtraced_position,H,dims);
-        traced_velocity.z = get_interpolated_value_with_obs(w_prev, obs, backtraced_position,H,dims);
+        traced_velocity.x = get_interpolated_value_with_obs(u_prev, obs, backtraced_position,_H_,dims);
+        traced_velocity.y = get_interpolated_value_with_obs(v_prev, obs, backtraced_position,_H_,dims);
+        traced_velocity.z = get_interpolated_value_with_obs(w_prev, obs, backtraced_position,_H_,dims);
 
         //Has to be set on u
         u[IX(i,j,k)] = traced_velocity.x;
@@ -728,7 +730,7 @@ void advect_velocity_forward_euler(float delta_time, float *u, float *v, float *
     FOR_EACH_FACE
     {
 
-    float3 pos = {i*H,j*H,k*H};
+    float3 pos = {i*_H_,j*_H_,k*_H_};
     float3 orig_vel = {u_prev[IX(i,j,k)],v_prev[IX(i,j,k)],w_prev[IX(i,j,k)]};
 
         float3 new_pos = {
@@ -744,9 +746,9 @@ void advect_velocity_forward_euler(float delta_time, float *u, float *v, float *
 #endif
 
         float3 new_vel;
-        new_vel.x = get_interpolated_value(u_prev, new_pos,H,dims);
-        new_vel.y = get_interpolated_value(v_prev, new_pos,H,dims);
-        new_vel.z = get_interpolated_value(w_prev, new_pos,H,dims);
+        new_vel.x = get_interpolated_value(u_prev, new_pos,_H_,dims);
+        new_vel.y = get_interpolated_value(v_prev, new_pos,_H_,dims);
+        new_vel.z = get_interpolated_value(w_prev, new_pos,_H_,dims);
 
 
         //Has to be set on u
@@ -860,7 +862,7 @@ void project(double dt, float *u, float *v, float *w, float *pressure, float *di
 
     //set x = 0;
     std::fill(x.begin(), x.end(), 0.0);
-    double mtxScale = 1.0/(H*H);
+    double mtxScale = 1.0/(_H_*_H_);
     FOR_EACH_CELL
     {
         //Construct b
@@ -888,7 +890,7 @@ void project(double dt, float *u, float *v, float *w, float *pressure, float *di
 
    // Subtract pressure  gradient from our velocity and save in target
     double rho = 1.0;
-    double scale = 1.0;//dt/(rho*H);
+    double scale = 1.0;//dt/(rho*_H_);
     FOR_EACH_CELL
     {
         float dup = 0.5f * (get_data_ublas_vec(x,i+1,j,k) - get_data_ublas_vec(x,i-1,j,k));
@@ -1169,6 +1171,7 @@ void cg_no_matrix(float* x, float *b, float *r, float *d, float *q, int N, int m
 
 
 void slowCG(float* A, float* x, float *b, int N, int maxIter, float tol){
+#ifndef WIN32
   //When porting cg to opencl  only the mtx-vec multiply and the
   //dot-product(reduction) are run on the GPU everything is on the GPU
   int i = 0;
@@ -1212,9 +1215,7 @@ void slowCG(float* A, float* x, float *b, int N, int maxIter, float tol){
   }
 
   printf("CG Terminated with iterations %d, and rnew %3.6f\n",i, rnew);
-
-
-
+#endif //WIN32
 }
 
 void setupMatrix(float * mtx){
