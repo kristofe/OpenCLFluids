@@ -75,6 +75,8 @@ int step;
 int maccormack;
 int vorticity;
 int useCG;
+int simpleInput;
+int addForces;
 
 //OpenCL globals
 int dims[3] = { NX, NY, NZ};
@@ -231,12 +233,53 @@ static int allocate_data ( void )
     return ( 1 );
 }
 
+static void setup_sources_and_forces()
+{  
+  const int ww = NX*0.25;
+  const int hh = 2;
+  int left = NX / 2 - ww / 2;
+  int right = NX / 2 + ww / 2;
+  int bottom = 3;
+  int top = bottom + hh;
 
-/*
-  ----------------------------------------------------------------------
-   OpenGL specific drawing routines
-  ----------------------------------------------------------------------
-*/
+  FOR_EACH_CELL
+  {
+
+    if (i > left  && i < right  && j > bottom && j < top)
+      g_dens_prev[IX(i, j, 0)] = 1;
+      g_v_prev[IX(i, j, 0)] = 0.01f;
+  }
+
+}
+static void setup_obstacles()
+{  
+  //setup obstacles
+  const int ww = NX*0.125;
+  const int hh = NY*0.125;
+  int left = NX / 2 - ww / 2 + NX / 4;
+  int right = NX / 2 + ww / 2 + NX / 4;
+  int top = NY / 2 + hh / 2;
+  int bottom = NY / 2 - hh / 2;
+
+  float3 center = { NX / 2.0f, NY / 4.0f, 0.0f };
+  float radius = NX / 20.0f;
+  FOR_EACH_CELL
+  {
+    float3 pos = { i, j, 0 };
+    float3 diff = { center.x - i, center.y - j, 0 };
+    float distSqr = diff.x*diff.x + diff.y*diff.y;
+    if (distSqr < radius*radius)
+    {
+      g_obs[IX(i, j, 0)] = 1;
+    }
+
+    /*
+    if (i > left  && i < right  && j > bottom && j < top)
+      g_obs[IX(i, j, 0)] = 1;
+      */
+  }
+
+}
 
 static void pre_display ( void )
 {
@@ -387,6 +430,8 @@ static void get_from_UI ( float * d, float * u, float * v, float * heat, float *
         u[i] = v[i] = w[i] = d[i] = 0.0f;
     }
     */
+    if (addForces)
+      setup_sources_and_forces();
 
     if ( !mouse_down[0] && !mouse_down[2] ) return;
 
@@ -395,7 +440,7 @@ static void get_from_UI ( float * d, float * u, float * v, float * heat, float *
 
     if ( i<2 || i>=NX-1 || j<2 || j>=NY-1 ) return;
 
-    if ( mouse_down[0] ) {
+    if ( mouse_down[0] || mouse_down[2] ) {
         /*
         compressibility[IX(i,j)] = 1.0f;
         compressibility[IX(i+1,j)] = 1.0f;
@@ -403,23 +448,28 @@ static void get_from_UI ( float * d, float * u, float * v, float * heat, float *
         compressibility[IX(i+1,j+1)] = 1.0f;
         heat[IX(i,j)] = 0.05f;
      */
-        d[IX(i,j,0)] = source;
+      if (mouse_down[2] || simpleInput){
+        d[IX(i, j, 0)] = source;
+      }
 
+      if (mouse_down[0] || simpleInput)
+      {
         float diffx = mx - omx;
         float diffy = win_y - my - omy;
 
-        if(abs(diffx) > 0.000001)
-            diffx = diffx/diffx * diffx<0.0f?-1.0f:1.0f;
-        if(abs(diffy) > 0.000001)
-            diffy = diffy/diffy * diffy<0.0f?-1.0f:1.0f;
+        if (abs(diffx) > 0.000001)
+          diffx = diffx / diffx * diffx<0.0f ? -1.0f : 1.0f;
+        if (abs(diffy) > 0.000001)
+          diffy = diffy / diffy * diffy < 0.0f ? -1.0f : 1.0f;
 
-        u[IX(i,j,0)] = 0.1f * force * diffx;
-        v[IX(i,j,0)] = 0.1f * force * diffy;
+        u[IX(i, j, 0)] = 0.1f * force * diffx;
+        v[IX(i, j, 0)] = 0.1f * force * diffy;
 
-//		u[IX(i-1,j,0)] = 0.075f *  force;
-//		u[IX(i,j,0)] = 0.075f *  force;
-//		u[IX(i+1,j,0)] = 0.075f *  force;
-//		v[IX(i,j+1,0)] = 0.5f * force * diffy;
+        //		u[IX(i-1,j,0)] = 0.075f *  force;
+        //		u[IX(i,j,0)] = 0.075f *  force;
+        //		u[IX(i+1,j,0)] = 0.075f *  force;
+        //		v[IX(i,j+1,0)] = 0.5f * force * diffy;
+      }
     }
 
     /*
@@ -431,8 +481,7 @@ static void get_from_UI ( float * d, float * u, float * v, float * heat, float *
 
     omx = mx;
     omy = win_y-my;
-
-    return;
+    
 }
 
 /*
@@ -487,6 +536,16 @@ static void key_func ( unsigned char key, int x, int y )
         case 'O':
             vorticity = !vorticity;
             printf("Vorticity = %s\n",vorticity?"true":"false");
+            break;
+        case 'i':
+        case 'I':
+            simpleInput = !simpleInput;
+            printf("Simple Input = %s\n",simpleInput?"true":"false");
+            break;
+        case 'f':
+        case 'F':
+            addForces = !addForces;
+            printf("Add Forces= %s\n",addForces?"true":"false");
             break;
     }
 }
@@ -1129,6 +1188,8 @@ int main ( int argc, char ** argv )
   printf ( "\t switch poisson solvers from jacobi to conjugate gradient by pressing the 'c' key\n" );
   printf ( "\t switch advection scheme from RK2 to MacCormack by pressing the 'm' key\n" );
   printf ( "\t toggle vorticity confinement by pressing the 'o' key\n" );
+  printf ( "\t toggle simple input by pressing the 'i' key.  This combines density and velocity input on a left mouse drag.\n" );
+  printf(  "\t toggle automatic adding of sources and forces by pressing the 'f' key\n");
 
   printf ( "\t Quit by pressing the 'q' key\n" );
 
@@ -1139,6 +1200,8 @@ int main ( int argc, char ** argv )
   maccormack = 0;
   vorticity = 1;
   useCG = 1;
+  simpleInput = 1;
+  addForces = 1;
 
   if ( !allocate_data () ) exit ( 1 );
   clear_data ();
@@ -1169,30 +1232,7 @@ int main ( int argc, char ** argv )
   g_dens_prev[IX(16,3,0)] = 10.0f;
 
 
-
-  //setup obstacles
-  const int ww = NX*0.125;
-  const int hh = NY*0.125;
-  int left = NX/2 - ww/2 + NX/4;
-  int right = NX/2 + ww/2 + NX/4;
-  int top = NY/2 + hh/2;
-  int bottom = NY/2 - hh/2;
-
-  float3 center = {NX/2, NY/2, 0.0f};
-  float radius = NX/10;
-  FOR_EACH_CELL
-  {
-    float3 pos = {i, j, 0};
-    float3 diff = {center.x - i, center.y - j, 0};
-    float distSqr = diff.x*diff.x + diff.y*diff.y;
-    if(distSqr < radius*radius)
-    {
-        g_obs[IX(i,j,0)] = 1;
-    }
-
-    if(i > left  && i < right  && j > bottom && j < top)
-      g_obs[IX(i,j,0)] = 1;
-  }
+  setup_obstacles();
 
   //g_u_prev[IX(16,3,0)] = 10.0f;
 

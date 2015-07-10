@@ -786,7 +786,7 @@ bool check_divergence(float *u, float *v, float *w)
 
         if(div > 0.001)
         {
-            printf("Velocity field is not divergence free\n");
+            printf("Velocity field is not divergence free\t");
             return false;
         }
     }
