@@ -4,8 +4,8 @@
 #define RUN_TIMINGS 0
 
 //GRID DIMENSIONS
-#define NX 96
-#define NY 96
+#define NX 64
+#define NY 64
 #define NZ 1
 #define _H_  1.0f
 
@@ -186,7 +186,8 @@ static void clear_data ( void )
         g_u[i] = g_v[i] = g_w[i] = g_u_prev[i] = g_v_prev[i] = g_w_prev[i] =
             g_dens[i] = g_dens_prev[i] = g_curl[i] =
             g_heat[i] = g_heat_prev[i] = g_compressibility[i] =
-            g_divergence[i] = g_pressure[i] = g_pressure_prev[i] = 0.0f;
+            g_divergence[i] = g_pressure[i] = g_pressure_prev[i] =
+            g_heat[i] = g_heat_prev[i]= 0.0f;
     }
 
   //memset(g_laplacian_matrix,0.0f, sizeof(float)*size*size);
@@ -235,7 +236,7 @@ static int allocate_data ( void )
 
 static void setup_sources_and_forces()
 {  
-  const int ww = NX*0.125;
+  const int ww = NX*0.2;
   const int hh = 2;
   int left = NX / 2 - ww / 2;
   int right = NX / 2 + ww / 2;
@@ -246,8 +247,11 @@ static void setup_sources_and_forces()
   {
 
     if (i > left  && i < right  && j > bottom && j < top)
-      g_dens_prev[IX(i, j, 0)] = 1;
-      g_heat_prev[IX(i, j, 0)] = 0.01f;
+    {
+      int idx = IX(i, j, 0);
+      g_dens_prev[idx] = 1.0f;
+      g_heat_prev[idx] = g_heat[idx] = 0.1f;
+    }
   }
 
 }
@@ -261,8 +265,8 @@ static void setup_obstacles()
   int top = NY / 2 + hh / 2;
   int bottom = NY / 2 - hh / 2;
 
-  float3 center = { NX / 2.0f, NY / 3.5f, 0.0f };
-  float radius = NX / 10.0f;
+  float3 center = { NX / 2.0f, NY / 6.0f, 0.0f };
+  float radius = NX / 20.0f;
   FOR_EACH_CELL
   {
     float3 pos = { i, j, 0 };
@@ -384,6 +388,36 @@ static void draw_density ( void )
 
     glEnd ();
 }
+
+static void draw_heat(void)
+{
+  int i, j;
+  float x, y, h, d00, d01, d10, d11;
+
+  h = 1.0f / NX;
+
+  glBegin(GL_QUADS);
+
+  for (i = 0; i < NX; i++) {
+    x = (i - 0.0f)*h;
+    for (j = 0; j < NY; j++) {
+      y = (j - 0.0f)*h;
+
+      d00 = get_data(g_heat, i, j, 0);
+      d01 = get_data(g_heat, i, j + 1, 0);
+      d10 = get_data(g_heat, i + 1, j, 0);
+      d11 = get_data(g_heat, i + 1, j + 1, 0);
+
+      glColor4f(1.0f, 0.0f, 0.0f, d00); glVertex2f(x, y);
+      glColor4f(1.0f, 0.0f, 0.0f, d10); glVertex2f(x + h, y);
+      glColor4f(1.0f, 0.0f, 0.0f, d11); glVertex2f(x + h, y + h);
+      glColor4f(1.0f, 0.0f, 0.0f, d01); glVertex2f(x, y + h);
+    }
+  }
+
+  glEnd();
+}
+
 
 static void draw_obstacles ( void )
 {
@@ -637,8 +671,6 @@ static void idle_func ( void )
 
 
 #else
-    //Bouyance should be considered an external force and should be applied immediately after velocity advection
-    bouyancy(g_v_prev, g_heat);
     if(maccormack){
             advect_velocity_maccormack(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev, g_obs);
         } else {
@@ -646,6 +678,8 @@ static void idle_func ( void )
             advect_velocity_RK2(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev, g_obs);
         }
 
+    //Bouyance should be considered an external force and should be applied immediately after velocity advection
+    bouyancy(g_v, g_heat);
     //Need to advect heat
     advectRK2(dt, g_heat, g_heat_prev,g_u, g_v, g_w,g_obs);
 
@@ -655,7 +689,7 @@ static void idle_func ( void )
     project(dt,g_u,g_v, g_w, g_divergence, g_pressure, g_pressure_prev, g_laplacian_matrix,g_cg_r, g_cg_d, g_cg_q,g_obs,useCG);
 
 
-        advectRK2(dt,g_dens,g_dens_prev, g_u, g_v, g_w, g_obs);
+   advectRK2(dt,g_dens,g_dens_prev, g_u, g_v, g_w, g_obs);
 
     if(vorticity) {
             vorticity_confinement(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev);
@@ -697,6 +731,10 @@ static void display_func ( void )
         else
     {
       draw_density ();
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      draw_heat();
+      glDisable(GL_BLEND);
     }
 
     if ( dobs )

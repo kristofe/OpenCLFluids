@@ -776,7 +776,9 @@ void bouyancy(float *v, float *temp)
 
   FOR_EACH_CELL
   {
-    v[IX(i, j, k)] -= a * temp[IX(i, j, k)] + -b * (temp[IX(i, j, k)] - Tamb);
+    unsigned int idx = IX(i, j, k);
+    v[idx] -= a * temp[idx] + -b * (temp[idx] - Tamb);
+    //temp[idx] *= 0.999f;
   }
 }
 
@@ -807,7 +809,7 @@ bool check_divergence(float *u, float *v, float *w)
 
         if(div > 0.001)
         {
-            printf("Velocity field is not divergence free\t");
+            //printf("Velocity field is not divergence free\t");
             return false;
         }
     }
