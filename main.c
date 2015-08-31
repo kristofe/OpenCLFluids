@@ -1,7 +1,3 @@
-#define USE_OPENCL 0
-#define USE_OPENCL_ON_CPU 0
-
-#define RUN_TIMINGS 0
 
 //GRID DIMENSIONS
 #define NX 64
@@ -10,11 +6,6 @@
 #define _H_  1.0f
 
 
-#ifdef __APPLE__
-  #define GL_SHARING_EXTENSION "cl_APPLE_gl_sharing"
-#else
-  #define GL_SHARING_EXTENSION "cl_khr_gl_sharing"
-#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -24,11 +15,6 @@
   #include <OpenGL/gl.h>
   #include <OpenGL/glu.h>
   #include <GLUT/glut.h>
-  #include <OpenGL/CGLDevice.h>
-  #include <OpenGL/CGLCurrent.h>
-  #include <OpenGL/CGLTypes.h>
-  #include <OpenCL/opencl.h>
-  #include <OpenCL/cl_gl_ext.h>
 
 
 #elif WIN32
@@ -39,12 +25,6 @@
 #include <GL/glut.h>
 #endif
 
-#if USE_OPENCL
-#include "cl-helper.h"
-#include "timing.h"
-
-#include "cl_solver.h"
-#endif
 
 #include "second_order_solver.h"
 
@@ -80,77 +60,6 @@ int addForces;
 
 //OpenCL globals
 int dims[3] = { NX, NY, NZ};
-#if USE_OPENCL
-CLData clData;
-
-
-
-
-void init_opencl()
-{
-#if !__APPLE__
-   create_context_on(CHOOSE_INTERACTIVELY, CHOOSE_INTERACTIVELY, 0, &clData.ctx, &clData.queue, 0);
-   //create_context_on("GeForce", "GeForce GTX 980", 0, &clData.ctx, &clData.queue, 0);
-#else
-#if USE_OPENCL_ON_CPU
-  create_context_on("Apple", "Intel", 0, &clData.ctx, &clData.queue, 0);
-#else
-   create_context_on("Apple", "GeForce", 0, &clData.ctx, &clData.queue, 0);
-#endif
-#endif
-
-  set_device_id(&clData);
-
-   init_cl_data(&clData,H,NX*NY*NZ,4, NX,NY,NZ);
-}
-
-void transfer_buffers_to_gpu()
-{
-   transfer_cl_float_buffer_to_device(&clData,clData.buf_divergence,g_divergence,clData.n,true);
-   transfer_cl_float_buffer_to_device(&clData,clData.buf_dens,g_dens,clData.n,true);
-   transfer_cl_float_buffer_to_device(&clData,clData.buf_dens_prev,g_dens_prev,clData.n,true);
-   transfer_cl_float_buffer_to_device(&clData,clData.buf_u_prev,g_u_prev,clData.n,true);
-   transfer_cl_float_buffer_to_device(&clData,clData.buf_v_prev,g_v_prev,clData.n,true);
-   transfer_cl_float_buffer_to_device(&clData,clData.buf_w_prev,g_w_prev,clData.n,true);
-   transfer_cl_float_buffer_to_device(&clData,clData.buf_u,g_u,clData.n,true);
-   transfer_cl_float_buffer_to_device(&clData,clData.buf_v,g_v,clData.n,true);
-   transfer_cl_float_buffer_to_device(&clData,clData.buf_w,g_w,clData.n,true);
-   transfer_cl_float_buffer_to_device(&clData,clData.buf_pressure,g_pressure,clData.n,true);
-   transfer_cl_float_buffer_to_device(&clData,clData.buf_pressure_prev,g_pressure_prev,clData.n,true);
-
-
-   transfer_cl_int_buffer_to_device(&clData,clData.buf_obs,g_obs,clData.n,true);
-
-//   transfer_cl_float_buffer_to_device(&clData,clData.buf_debug_data1,clData.debug_data1,clData.dn*clData.n,true);
-//   transfer_cl_float_buffer_to_device(&clData,clData.buf_debug_data2,clData.debug_data2,clData.dn*clData.n,true);
-//   transfer_cl_float_buffer_to_device(&clData,clData.buf_debug_data3,clData.debug_data3,clData.dn*clData.n,true);
-}
-
-void transfer_buffers_to_cpu()
-{
-   transfer_cl_float_buffer_from_device(&clData,clData.buf_divergence,g_divergence,clData.n,true);
-   transfer_cl_float_buffer_from_device(&clData,clData.buf_dens,g_dens,clData.n,true);
-   transfer_cl_float_buffer_from_device(&clData,clData.buf_u_prev,g_u_prev,clData.n,true);
-   transfer_cl_float_buffer_from_device(&clData,clData.buf_v_prev,g_v_prev,clData.n,true);
-   transfer_cl_float_buffer_from_device(&clData,clData.buf_w_prev,g_w_prev,clData.n,true);
-   transfer_cl_float_buffer_from_device(&clData,clData.buf_u,g_u,clData.n,true);
-   transfer_cl_float_buffer_from_device(&clData,clData.buf_v,g_v,clData.n,true);
-   transfer_cl_float_buffer_from_device(&clData,clData.buf_w,g_w,clData.n,true);
-   transfer_cl_float_buffer_from_device(&clData,clData.buf_pressure,g_pressure,clData.n,true);
-   transfer_cl_float_buffer_from_device(&clData,clData.buf_pressure_prev,g_pressure_prev,clData.n,true);
-   transfer_cl_float_buffer_from_device(&clData,clData.buf_obs,g_obs,clData.n,true);
-//   transfer_cl_float_buffer_from_device(&clData,clData.buf_debug_data1,clData.debug_data1,clData.dn*clData.n,true);
-//   transfer_cl_float_buffer_from_device(&clData,clData.buf_debug_data2,clData.debug_data2,clData.dn*clData.n,true);
-//   transfer_cl_float_buffer_from_device(&clData,clData.buf_debug_data3,clData.debug_data3,clData.dn*clData.n,true);
-
-}
-
-
-void flush_cl_queue()
-{
-   CALL_CL_GUARDED(clFinish, (clData.queue));
-}
-#endif //USE_OPENCL
 
 static void free_data ( void )
 {
@@ -622,55 +531,6 @@ static void idle_func ( void )
         //blur(g_u_prev,g_v_prev,g_w_prev, dt);
 
 
-#if USE_OPENCL
-
-  transfer_buffers_to_gpu();
-
-  run_cl_advect_velocity(&clData, dt);
-
-  flush_cl_queue();
-
-
-  run_cl_calculate_divergence(&clData, dt);
-
-  run_cl_zero_pressure(&clData);
-
-  if(useCG)
-  {
-    transfer_cl_float_buffer_from_device(&clData,clData.buf_pressure,g_pressure,clData.n,true);
-    transfer_cl_float_buffer_from_device(&clData,clData.buf_divergence,g_divergence,clData.n,true);
-
-    run_cl_cg_no_mtx(&clData,g_pressure, g_divergence,  g_cg_r, g_cg_d, g_cg_q, clData.n, 10, 0.0001f);
-
-    flush_cl_queue();
-
-    transfer_cl_float_buffer_to_device(&clData,clData.buf_pressure,g_pressure,clData.n,true);
-
-
-  }else{
-    //This has to run the whole kernel and iterate at the cpu because
-    // opencl only can sync at the workgroup level when we need
-    // global synchronization
-    for(int i = 0; i < 20; ++i)
-    {
-      run_cl_pressure_solve(&clData, dt);
-    }
-  }
-
-  run_cl_pressure_apply(&clData, dt);
-
-
-  flush_cl_queue();
-
-  run_cl_advect_density(&clData, dt);
-
-    if(vorticity){
-      run_cl_vorticity_confinement(&clData, dt,0.5f);
-    }
-  transfer_buffers_to_cpu();
-
-
-#else
     if(maccormack){
             advect_velocity_maccormack(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev, g_obs);
         } else {
@@ -694,7 +554,6 @@ static void idle_func ( void )
     if(vorticity) {
             vorticity_confinement(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev);
         }
-#endif
 
     
 
@@ -749,22 +608,6 @@ static void display_func ( void )
 
 
 
-/*
-#define NXTEST 2
-#define NYTEST 2
-#define NZTEST 1
-#define IXTEST(i,j,k) ((i) + ((j)*(NXTEST)) + ((k)*(NXTEST)*(NYTEST)))
-void run_tests()
-{
-    float test_grid[NXTEST*NYTEST*NZTEST];
-    test_grid[IXTEST(0,0,0)] = -1.0f;
-    test_grid[IXTEST(1,0,0)] = 1.0f;
-    test_grid[IXTEST(0,1,0)] = -2.0f;
-    test_grid[IXTEST(1,1,0)] = 3.0f;
-
-    float value = get_interpolated_value(test_grid,1.5f,0.5f,0.5f,1.0f,2,2,1);
-}
- */
 
 
 void readMatrix(float* m, int n){
@@ -785,217 +628,6 @@ void readMatrix(float* m, int n){
   fclose(fp);
 }
 
-#if USE_OPENCL
-void runTimings(){
-
-  int ntrips = 10;
-  char device_name[256];
-
-  timestamp_type time1, time2;
-
-  ////////////////////////////////////////////////////
-  ///GPU TIMINGS
-  ////////////////////////////////////////////////////
-
-  init_opencl();
-  load_cl_kernels(&clData);
-  allocate_cl_buffers(&clData);
-
-
-  print_device_info_from_queue(clData.queue);
-  get_device_name_from_queue(clData.queue, device_name, 256);
-
-  transfer_buffers_to_gpu();
-
-  double advectionVelocityTimeGPU, advectionDensityTimeGPU, divergenceTimeGPU, projectJacobiTimeGPU, projectCGTimeGPU, pressureApplyTimeGPU;
-
-
-  transfer_buffers_to_gpu();
-
-  get_timestamp(&time1);
-  for(int i = 0; i < ntrips; ++i)
-  {
-    run_cl_advect_velocity(&clData, dt);
-  }
-  flush_cl_queue();
-  get_timestamp(&time2);
-  advectionVelocityTimeGPU = timestamp_diff_in_seconds(time1,time2)/ntrips;
-
-
-
-  get_timestamp(&time1);
-  for(int i = 0; i < ntrips; ++i)
-  {
-    run_cl_calculate_divergence(&clData, dt);
-  }
-  flush_cl_queue();
-  get_timestamp(&time2);
-  divergenceTimeGPU = timestamp_diff_in_seconds(time1,time2)/ntrips;
-
-  transfer_buffers_to_cpu();
-  flush_cl_queue();
-
-  //This needs ntrips different divergence matrices to get accurate timings.
-  //This is because by the time the second time it is called it will detect
-  //the system is solved and exit after one matrix
-  get_timestamp(&time1);
-  for(int i = 0; i < ntrips; ++i)
-  {
-    transfer_cl_float_buffer_from_device(&clData,clData.buf_pressure,g_pressure,clData.n,true);
-    transfer_cl_float_buffer_from_device(&clData,clData.buf_divergence,g_divergence,clData.n,true);
-
-    run_cl_cg_no_mtx(&clData,g_pressure, g_divergence,  g_cg_r, g_cg_d, g_cg_q, clData.n, 10, 0.0001f);
-    flush_cl_queue();
-
-    transfer_cl_float_buffer_to_device(&clData,clData.buf_pressure,g_pressure,clData.n,true);
-  }
-  flush_cl_queue();
-  get_timestamp(&time2);
-  projectCGTimeGPU = timestamp_diff_in_seconds(time1,time2)/ntrips;
-
-
-
-
-  get_timestamp(&time1);
-  for(int i = 0; i < ntrips; ++i)
-  {
-    for(int i = 0; i < 20; ++i)
-    {
-      run_cl_pressure_solve(&clData, dt);
-    }
-  }
-  flush_cl_queue();
-  get_timestamp(&time2);
-  projectJacobiTimeGPU = timestamp_diff_in_seconds(time1,time2)/ntrips;
-
-
-
-  get_timestamp(&time1);
-  for(int i = 0; i < ntrips; ++i)
-  {
-    run_cl_pressure_apply(&clData, dt);
-  }
-  flush_cl_queue();
-  get_timestamp(&time2);
-  pressureApplyTimeGPU = timestamp_diff_in_seconds(time1,time2)/ntrips;
-
-
-
-  get_timestamp(&time1);
-  for(int i = 0; i < ntrips; ++i)
-  {
-    run_cl_advect_density(&clData, dt);
-  }
-  flush_cl_queue();
-  get_timestamp(&time2);
-  advectionDensityTimeGPU = timestamp_diff_in_seconds(time1,time2)/ntrips;
-
-  printf("%s\t%dx%dx%d\t%s\t%s\t %3.6f\ts\t", device_name,NX,NY,NZ,"GPU","Advection Velocity",advectionVelocityTimeGPU);
-  printf("%.3f\tMegaCells/s\n",(NX*NY*NZ)*1e-6/advectionVelocityTimeGPU);
-
-  printf("%s\t%dx%dx%d\t%s\t%s\t %3.6f\ts\t", device_name,NX,NY,NZ,"GPU","Advection Density",advectionDensityTimeGPU);
-  printf("%.3f\tMegaCells/s\n",(NX*NY*NZ)*1e-6/advectionDensityTimeGPU);
-
-  printf("%s\t%dx%dx%d\t%s\t%s\t %3.6f\ts\t", device_name,NX,NY,NZ,"GPU", "Divergence",divergenceTimeGPU);
-  printf("%.3f\tMegaCells/s\n",(NX*NY*NZ)*1e-6/divergenceTimeGPU);
-
-  printf("%s\t%dx%dx%d\t%s\t%s\t %3.6f\ts\t", device_name,NX,NY,NZ,"GPU", "Projection Jacobi",projectJacobiTimeGPU);
-  printf("%.3f\tMegaCells/s\n",(NX*NY*NZ)*1e-6/projectJacobiTimeGPU);
-
-  printf("%s\t%dx%dx%d\t%s\t%s\t %3.6f\ts\t",device_name,NX,NY,NZ,"GPU", "Projection Conjugate Gradient",projectCGTimeGPU);
-  printf("%.3f\tMegaCells/s\n",(NX*NY*NZ)*1e-6/projectCGTimeGPU);
-
-  printf("%s\t%dx%dx%d\t%s\t%s\t %3.6f\ts\t", device_name,NX,NY,NZ,"GPU","Pressure Apply",pressureApplyTimeGPU);
-  printf("%.3f\tMegaCells/s\n",(NX*NY*NZ)*1e-6/pressureApplyTimeGPU);
-
-
-  cleanup_cl(&clData);
-
-
-
-
-  ////////////////////////////////////////////////////
-  ///CPU TIMINGS
-  ////////////////////////////////////////////////////
-  double advectionVelocityTimeCPU, advectionDensityTimeCPU, divergenceTimeCPU, projectJacobiTimeCPU, projectCGTimeCPU, pressureApplyTimeCPU;
-
-  get_timestamp(&time1);
-  for(int i = 0; i < ntrips; ++i)
-  {
-    advect_velocity_RK2(dt, g_u, g_v, g_w, g_u_prev, g_v_prev, g_w_prev,g_obs);
-  }
-  get_timestamp(&time2);
-  advectionVelocityTimeCPU = timestamp_diff_in_seconds(time1,time2)/ntrips;
-
-
-  //project(dt,g_u,g_v, g_w, g_divergence, g_pressure, g_pressure_prev, g_laplacian_matrix,useCG);
-  get_timestamp(&time1);
-  for(int i = 0; i < ntrips; ++i)
-  {
-    calculate_divergence(g_divergence, g_u, g_v, g_w, dt);
-  }
-  get_timestamp(&time2);
-  divergenceTimeCPU = timestamp_diff_in_seconds(time1,time2)/ntrips;
-
-
-  //This needs ntrips different divergence matrices to get accurate timings.
-  //This is because by the time the second time it is called it will detect
-  //the system is solved and exit after one matrix
-  get_timestamp(&time1);
-  for(int i = 0; i < ntrips; ++i)
-  {
-    pressure_solve_cg_no_matrix(g_pressure, g_divergence, g_cg_r, g_cg_d, g_cg_q);
-  }
-  get_timestamp(&time2);
-  projectCGTimeCPU = timestamp_diff_in_seconds(time1,time2)/ntrips;
-
-  get_timestamp(&time1);
-  for(int i = 0; i < ntrips; ++i)
-  {
-    pressure_solve(g_pressure,g_pressure_prev, g_divergence, g_obs, dt);
-  }
-  get_timestamp(&time2);
-  projectJacobiTimeCPU = timestamp_diff_in_seconds(time1,time2)/ntrips;
-
-  get_timestamp(&time1);
-  for(int i = 0; i < ntrips; ++i)
-  {
-    pressure_apply(g_u, g_v, g_w, g_pressure, dt);
-  }
-  get_timestamp(&time2);
-  pressureApplyTimeCPU = timestamp_diff_in_seconds(time1,time2)/ntrips;
-
-
-  get_timestamp(&time1);
-  for(int i = 0; i < ntrips; ++i)
-  {
-    advectRK2(dt,g_dens,g_dens_prev, g_u, g_v, g_w);
-  }
-  get_timestamp(&time2);
-  advectionDensityTimeCPU = timestamp_diff_in_seconds(time1,time2)/ntrips;
-
-
-  printf("%s\t%dx%dx%d\t%s\t%s\t %3.6f\ts\t", device_name,NX,NY,NZ,"CPU","Advection Velocity",advectionVelocityTimeCPU);
-  printf("%.3f\tMegaCells/s\n",(NX*NY*NZ)*1e-6/advectionVelocityTimeCPU);
-
-  printf("%s\t%dx%dx%d\t%s\t%s\t %3.6f\ts\t", device_name,NX,NY,NZ,"CPU","Advection Density",advectionDensityTimeCPU);
-  printf("%.3f\tMegaCells/s\n",(NX*NY*NZ)*1e-6/advectionDensityTimeCPU);
-
-  printf("%s\t%dx%dx%d\t%s\t%s\t %3.6f\ts\t", device_name,NX,NY,NZ,"CPU","Divergence",divergenceTimeCPU);
-  printf("%.3f\tMegaCells/s\n",(NX*NY*NZ)*1e-6/divergenceTimeCPU);
-
-  printf("%s\t%dx%dx%d\t%s\t%s\t %3.6f\ts\t", device_name,NX,NY,NZ,"CPU","Projection Jacobi",projectJacobiTimeCPU);
-  printf("%.3f\tMegaCells/s\n",(NX*NY*NZ)*1e-6/projectJacobiTimeCPU);
-
-  printf("%s\t%dx%dx%d\t%s\t%s\t %3.6f\ts\t", device_name,NX,NY,NZ,"CPU","Projection Conjugate Gradient",projectCGTimeCPU);
-  printf("%.3f\tMegaCells/s\n",(NX*NY*NZ)*1e-6/projectCGTimeCPU);
-
-  printf("%s\t%dx%dx%d\t%s\t%s\t %3.6f\ts\t", device_name,NX,NY,NZ,"CPU","Pressure Apply",pressureApplyTimeCPU);
-  printf("%.3f\tMegaCells/s\n",(NX*NY*NZ)*1e-6/pressureApplyTimeCPU);
-
-}
-
-#endif //USE_OPENCL
 
 
 #ifndef WIN32
@@ -1079,112 +711,6 @@ void testCG(){
 }
 #endif //WIN32
 
-#if USE_OPENCL
-
-static void test_opencl_opengl_interop()
-{
-#ifdef __APPLE__
-  cl_int status;
-
-  CGLContextObj gl_context = CGLGetCurrentContext();
-//  const char * err = CGLErrorString(kCGLContext);
-
-  CGLShareGroupObj kCGLShareGroup = CGLGetShareGroup(gl_context);
-
-
-  cl_context_properties properties[] = {
-    CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE,
-    (cl_context_properties)kCGLShareGroup, 0
-  };
-
-  clData.ctx = clCreateContext(properties, 0, 0, 0, 0, &status);
-  CHECK_CL_ERROR(status, "clCreateContext");
-
-  // And now we can ask OpenCL which particular device is being used by
-  // OpenGL to do the rendering, currently:
-  cl_device_id renderer;
-  clGetGLContextInfoAPPLE(clData.ctx, gl_context,
-                          CL_CGL_DEVICE_FOR_CURRENT_VIRTUAL_SCREEN_APPLE, sizeof(renderer),
-                          &renderer, NULL);
-
-  cl_uint id_in_use;
-  clGetDeviceInfo(renderer, CL_DEVICE_VENDOR_ID, sizeof(cl_uint),
-                  &id_in_use, NULL);
-
-  clData.device = renderer;
-
-  cl_command_queue_properties qprops = 0;
-
-  clData.queue = clCreateCommandQueue(clData.ctx, clData.device, qprops, &status);
-  CHECK_CL_ERROR(status, "clCreateCommandQueue");
-
-
-
-
-  int extensionExists = 0;
-
-  size_t extensionSize;
-  int ciErrNum = clGetDeviceInfo( clData.device, CL_DEVICE_EXTENSIONS, 0, NULL, &extensionSize );
-  char* extensions = (char*) malloc( extensionSize);
-  ciErrNum = clGetDeviceInfo( clData.device, CL_DEVICE_EXTENSIONS, extensionSize, extensions, &extensionSize);
-
-  char * pch;
-  //printf ("Splitting extensions string \"%s\" into tokens:\n",extensions);
-  pch = strtok (extensions," ");
-  while (pch != NULL)
-  {
-    printf ("%s\n",pch);
-    if(strcmp(pch, GL_SHARING_EXTENSION) == 0) {
-      printf("Device supports gl sharing\n");
-      extensionExists = 1;
-      break;
-    }
-    pch = strtok (NULL, " ");
-  }
-
-#endif
-
-}
-
-void run_opencl_test(){
-
-  init_opencl();
-  load_cl_kernels(&clData);
-  allocate_cl_buffers(&clData);
-  transfer_buffers_to_gpu();
-
-  flush_cl_queue();
-
-  run_cl_advect_density(&clData, dt);
-
-  flush_cl_queue();
-
-  transfer_buffers_to_cpu();
-
-  flush_cl_queue();
-
-
-  printf("dens[%d] = %3.2f\n",IX(16,3,0),g_dens[IX(16,3,0)]);
-
-  if(g_dens[IX(16,3,0)] > 0.0f)
-  {
-    printf("Success!!\n");
-  }
-
-//  for (int i = 0; i < clData.n; ++i)
-//  {
-//    if(i == 112) {
-//      int j = i*clData.dn;
-//      printf("debug_data1[%d] = %3.2f, %3.2f, %3.2f, %3.2f\n",i,clData.debug_data1[j], clData.debug_data1[j+1], clData.debug_data1[j+2], clData.debug_data1[j+3]);
-//    }
-//
-//  }
-
-  cleanup_cl(&clData);
-
-
-}
-#endif //USE_OPENCL
 
 static void open_glut_window ( void )
 {
@@ -1272,10 +798,6 @@ int main ( int argc, char ** argv )
 //		}
 //	}
 
-#if RUN_TIMINGS
-  runTimings();
-  exit(0);
-#endif
 
   copy_grid(g_u_prev, g_u);
   copy_grid(g_v_prev, g_v);
@@ -1303,33 +825,15 @@ int main ( int argc, char ** argv )
     */
 
 
-#if USE_OPENCL
-  print_platforms_devices();
-  run_opencl_test();
-#endif
 
 //	run_tests();
 
 
-#if USE_OPENCL
-   init_opencl();
-   load_cl_kernels(&clData);
-   allocate_cl_buffers(&clData);
-
-
-   transfer_buffers_to_gpu();
-
-   flush_cl_queue();
-#endif
 
 
 
 
     glutMainLoop ();
-
-#if USE_OPENCL
-   cleanup_cl(&clData);
-#endif
 
     exit ( 0 );
 }
