@@ -88,6 +88,14 @@ if(APPLE)
    FIND_LIBRARY(OPENGL_LIBRARY OpenGL)
    FIND_LIBRARY(CORE_MIDI_LIBRARY CoreMidi)
 
+  find_package(GLUT REQUIRED)
+  include_directories(${GLUT_INCLUDE_DIRS})
+  link_directories(${GLUT_LIBRARY_DIRS})
+  add_definitions(${GLUT_DEFINITIONS})
+  if(NOT GLUT_FOUND)
+      message(ERROR " GLUT not found!")
+  endif(NOT GLUT_FOUND)
+
    MARK_AS_ADVANCED(
                      IOKIT_LIBRARY
                      COCOA_LIBRARY
@@ -100,6 +108,7 @@ if(APPLE)
       ${IOKIT_LIBRARY}
       ${COCOA_LIBRARY}
       ${OPENGL_LIBRARY}
+      ${GLUT_LIBRARY}
       ${CORE_MIDI_LIBRARY}
 #libglfw3.a
       )
